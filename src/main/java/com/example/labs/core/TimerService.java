@@ -42,6 +42,8 @@ public class TimerService {
     public void stop() {
         timer.stop();
         isRunning = false;
+        onPause = false;
+        lastTime = 0;
     }
 
     public void pause() {

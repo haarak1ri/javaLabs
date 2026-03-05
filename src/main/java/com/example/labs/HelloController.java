@@ -10,6 +10,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -18,12 +19,15 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 
 public class HelloController  {
     //лаба 1
@@ -65,6 +69,12 @@ public class HelloController  {
     @FXML private ComboBox<String> p1Combo;
     @FXML private ComboBox<String> p2Combo;
 
+    //лаба 3
+    @FXML private TextField n1TimeOfLifeField;
+    @FXML private TextField n2TimeOfLifeField;
+    @FXML private Button currentObjects;
+
+
 
     private GraphicsContext gc;
 
@@ -99,6 +109,8 @@ public class HelloController  {
         n2Field.setText("1.5");
         p1Combo.setValue("70%");
         p2Combo.setValue("50%");
+        n1TimeOfLifeField.setText("5.0");
+        n2TimeOfLifeField.setText("7.0");
 
 
         root.addEventFilter(KeyEvent.KEY_PRESSED, this::handleKeyPress);
@@ -109,7 +121,8 @@ public class HelloController  {
 
         clearCanvas();
         setupValidation();
-        showNPParams();
+        setupLifeTime();
+        showParams();
     }
 
     private void clearCanvas() {
@@ -176,7 +189,9 @@ public class HelloController  {
             float n2 = Float.parseFloat(n2Field.getText());
             double p1 = getProbabilityFromCombo(p1Combo);
             double p2 = getProbabilityFromCombo(p2Combo);
-            habitat.setParams(n1, n2, p1, p2);
+            float nt1 = Float.parseFloat(n1TimeOfLifeField.getText());
+            float nt2 = Float.parseFloat(n2TimeOfLifeField.getText());
+            habitat.setParams(n1, n2, p1, p2, nt1, nt2);
             habitat.reset();
             timerService.start();
         }
@@ -184,10 +199,13 @@ public class HelloController  {
         stopButton.setDisable(false);
         startButtonPanel.setDisable(true);
         stopButtonPanel.setDisable(false);
-        hideNPParams();
+        currentObjects.setDisable(false);
+        hideParams();
+
     }
 
     private void stopSimulation() {
+
         if(timerService.isRunning()) {
             timerService.pause();
 
@@ -196,7 +214,8 @@ public class HelloController  {
                 stopButton.setDisable(true);
                 startButtonPanel.setDisable(true);
                 stopButtonPanel.setDisable(true);
-                hideNPParams();
+                currentObjects.setDisable(true);
+                hideParams();
                 showModalDialog();
             } else {
                 timerService.stop();
@@ -204,12 +223,14 @@ public class HelloController  {
                 stopButton.setDisable(true);
                 startButtonPanel.setDisable(false);
                 stopButtonPanel.setDisable(true);
-                showNPParams();
+                currentObjects.setDisable(true);
+                showParams();
                 habitat.reset();
                 clearCanvas();
                 timerLabel.setText("Время: 0.0 сек");
             }
         }
+
     }
 
 
@@ -253,8 +274,14 @@ public class HelloController  {
             else if (newVal.startsWith("-")) {
                 n1Field.setText(oldVal);
             }
+            else if (newVal.startsWith(".")) {
+                n1Field.setText(oldVal);
+            }
 
-            else if (!newVal.isEmpty() && Float.parseFloat(newVal) <= 0) {
+            else if (!newVal.isEmpty() && !newVal.equals(".") && Float.parseFloat(newVal) < 1) {
+                n1Field.setText(oldVal);
+            }
+            else if (!newVal.isEmpty() && newVal.length() > 1 && newVal.startsWith("0") && !newVal.startsWith("0.")) {
                 n1Field.setText(oldVal);
             }
         });
@@ -268,22 +295,32 @@ public class HelloController  {
             else if (newVal.startsWith("-")) {
                 n2Field.setText(oldVal);
             }
+            else if (newVal.startsWith(".")) {
+                n2Field.setText(oldVal);
+            }
 
-            else if (!newVal.isEmpty() && Float.parseFloat(newVal) <= 0) {
+            else if (!newVal.isEmpty() && !newVal.equals(".") && Float.parseFloat(newVal) < 1) {
+                n2Field.setText(oldVal);
+            }
+            else if (!newVal.isEmpty() && newVal.length() > 1 && newVal.startsWith("0") && !newVal.startsWith("0.")) {
                 n2Field.setText(oldVal);
             }
         });
     }
 
-    private void showNPParams() {
+    private void showParams() {
         n1Field.setDisable(false);
         n2Field.setDisable(false);
+        n1TimeOfLifeField.setDisable(false);
+        n2TimeOfLifeField.setDisable(false);
         p1Combo.setDisable(false);
         p2Combo.setDisable(false);
     }
-    private void hideNPParams() {
+    private void hideParams() {
         n1Field.setDisable(true);
         n2Field.setDisable(true);
+        n1TimeOfLifeField.setDisable(true);
+        n2TimeOfLifeField.setDisable(true);
         p1Combo.setDisable(true);
         p2Combo.setDisable(true);
     }
@@ -303,6 +340,7 @@ public class HelloController  {
         }
     }
 
+    //2я лаб
     private void showModalDialog() {
         Dialog<Boolean> dialog = new Dialog<>();
         dialog.setTitle("Информация о симуляции");
@@ -311,7 +349,8 @@ public class HelloController  {
         TextArea textArea = new TextArea();
         textArea.setEditable(false);
         textArea.setPrefRowCount(4);
-        textArea.setPrefWidth(300);
+        textArea.setPrefWidth(600);
+        textArea.setPrefHeight(400);
 
         textArea.setText(
                 "Мальчики: " + habitat.getBoyCount() + "\n" +
@@ -346,7 +385,8 @@ public class HelloController  {
             stopButton.setDisable(true);
             startButtonPanel.setDisable(false);
             stopButtonPanel.setDisable(true);
-            showNPParams();
+            currentObjects.setDisable(true);
+            showParams();
             timerLabel.setText("Время: 0.0 сек");
 
 
@@ -356,4 +396,128 @@ public class HelloController  {
             simulationRunning.set(true);
         }
     }
+
+//лаба 3=================================================================================================================
+
+    private void setupLifeTime() {
+        n1TimeOfLifeField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal.matches("\\d*\\.?\\d*")) {
+                n1TimeOfLifeField.setText(oldVal);
+            }
+
+            else if (newVal.startsWith("-")) {
+                n1TimeOfLifeField.setText(oldVal);
+            }
+            else if (newVal.startsWith(".")) {
+                n1TimeOfLifeField.setText(oldVal);
+            }
+
+            else if (!newVal.isEmpty() && !newVal.equals(".") && Float.parseFloat(newVal) < 1) {
+                n1TimeOfLifeField.setText(oldVal);
+            }
+            else if (!newVal.isEmpty() && newVal.length() > 1 && newVal.startsWith("0") && !newVal.startsWith("0.")) {
+                n1TimeOfLifeField.setText(oldVal);
+            }
+        });
+
+        n2TimeOfLifeField.textProperty().addListener((obs, oldVal, newVal) -> {
+
+            if (!newVal.matches("\\d*\\.?\\d*")) {
+                n2TimeOfLifeField.setText(oldVal);
+            }
+
+            else if (newVal.startsWith("-")) {
+                n2TimeOfLifeField.setText(oldVal);
+            }
+            else if (newVal.startsWith(".")) {
+                n2TimeOfLifeField.setText(oldVal);
+            }
+            else if (!newVal.isEmpty() && !newVal.equals(".") && Float.parseFloat(newVal) < 1) {
+                n2TimeOfLifeField.setText(oldVal);
+            }
+            else if (!newVal.isEmpty() && newVal.length() > 1 && newVal.startsWith("0") && !newVal.startsWith("0.")) {
+                n2TimeOfLifeField.setText(oldVal);
+            }
+        });
+    }
+
+
+    public void handleGetCurrentObjectsButton(ActionEvent actionEvent) {
+       getCurrentObjects();
+    }
+
+    private void getCurrentObjects() {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Информация о симуляции");
+        dialog.setHeaderText("Живых студентов:");
+        dialog.setWidth(400);
+        dialog.setHeight(300);
+        dialog.setResizable(false);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(20);
+        grid.setVgap(5);
+        grid.setPadding(new Insets(10));
+
+
+        Label timeHeader = new Label("Время рождения");
+        timeHeader.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+        Label idHeader = new Label("ID");
+        idHeader.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+        Separator separator = new Separator();
+        separator.setMaxWidth(Double.MAX_VALUE);
+
+        grid.add(timeHeader,0,0); // столб / строка
+        grid.add(idHeader,1,0);
+        grid.add(separator, 0, 1, 2, 1);
+        int row = 2;
+        boolean hasLivingObjects = false;
+
+        System.out.println("=== getCurrentObjects вызван ===");
+        System.out.println("Размер birthToId: " + habitat.getBirthToId().size());
+        System.out.println("Размер activeIds: " + habitat.getActiveIds().size());
+
+        for(Map.Entry<Long,Integer> entry : habitat.getBirthToId().entrySet()) {
+            long creationTime = entry.getKey();
+            float realTime = creationTime / 1e9f;
+            String s = String.format("%.2f", realTime);
+            int id = entry.getValue();
+            if(habitat.getActiveIds().contains(id)) {
+                grid.add(new Label(s), 0, row);
+                grid.add(new Label("id " + id), 1, row);
+                row++;
+                hasLivingObjects = true;
+            }
+        }
+
+        if (!hasLivingObjects) {
+
+            Label emptyLabel = new Label("нет ни одного живого студента :(");
+            emptyLabel.setStyle("-fx-font-style: italic; -fx-text-fill: gray;");
+            grid.add(emptyLabel, 0, 2, 2, 1);
+        }
+
+        ScrollPane scrollPane = new ScrollPane(grid);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setPrefViewportWidth(300);
+        scrollPane.setPrefViewportHeight(350);
+        scrollPane.setPadding(new Insets(0));
+
+        dialog.getDialogPane().setContent(scrollPane);
+
+        dialog.getDialogPane().getButtonTypes().addAll(
+                ButtonType.CANCEL,
+                ButtonType.CLOSE
+        );
+        dialog.setResultConverter(button -> {
+            if (button == ButtonType.CLOSE || button == ButtonType.CANCEL) {
+                dialog.close();
+            }
+            return null;
+        });
+        dialog.showAndWait();
+    }
+
+
 }

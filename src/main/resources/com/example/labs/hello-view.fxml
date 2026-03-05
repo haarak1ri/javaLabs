@@ -191,7 +191,29 @@
                         </items>
                     </ComboBox>
 
+                    <Label text="Время жизни студентов-парней"
+                           GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                    <TextField fx:id="n1TimeOfLifeField"
+                               text="1.0"
+                               promptText="секунды"
+                               prefWidth="100"
+                               GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+                    <Label text="Время жизни студентов-девушек"
+                           GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                    <TextField fx:id="n2TimeOfLifeField"
+                               text="1.0"
+                               promptText="секунды"
+                               prefWidth="100"
+                               GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+
+
                 </GridPane>
+                <Button fx:id="currentObjects"
+                        text="Текущие объекты"
+                        onAction="#handleGetCurrentObjectsButton"
+                        prefWidth="200"
+                        style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
 
             </VBox>
         </SplitPane>
