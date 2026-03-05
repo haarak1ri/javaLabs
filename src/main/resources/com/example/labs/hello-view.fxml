@@ -5,56 +5,197 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.layout.BorderPane?>
 
-<AnchorPane fx:id="root"
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.collections.FXCollections?>
+<?import javafx.scene.control.ComboBox?>
+<?import java.lang.String?>
+
+<BorderPane fx:id="root"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.example.labs.HelloController"
-            prefWidth="1320" prefHeight="820"
+            prefWidth="1920" prefHeight="1080"
             style="-fx-background-color: #ffffff;">
+    <top>
+        <VBox>
+            <MenuBar>
+                <Menu text="Файл">
+                </Menu>
+                <Menu text="Вид">
+                    <MenuItem text="Показать/скрыть время" onAction="#handleShowTimerButton"/>
+                </Menu>
+                <Menu text="Справка">
+                </Menu>
+            </MenuBar>
+
+            <ToolBar>
+                <Button fx:id="startButton"
+                        text="Start"
+                        onAction="#handleStartButton"
+                        prefWidth="150"
+                        style="-fx-background-color: #05f106; -fx-text-fill: #FFFFFF;"/>
+                <Button fx:id="stopButton"
+                        text="Stop"
+                        onAction="#handleStopButton"
+                        prefWidth="150"
+                        style="-fx-background-color: #ff0000; -fx-text-fill: #FFFFFF;"/>
+                <Button fx:id="showTimerButton"
+                        text="Show timer"
+                        onAction="#handleShowTimerButton"
+                        prefWidth="150"
+                        style="-fx-background-color: #000000; -fx-text-fill: #FFFFFF;"/>
+            </ToolBar>
+        </VBox>
+    </top>
+
+    <center>
+        <SplitPane dividerPositions="0.7">
+
+            <AnchorPane>
+                <Canvas fx:id="gameCanvas"
+                        width="1280" height="920"
+                        style="-fx-border-color: black; -fx-background-color: white;"
+                        AnchorPane.topAnchor="20"
+                        AnchorPane.leftAnchor="20"
+                        AnchorPane.rightAnchor="20"
+                        AnchorPane.bottomAnchor="20"/>
+                <Label fx:id="timerLabel"
+                       text="Время: 0.0 сек"
+                       style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-background-color: rgba(240,240,240,0.8); -fx-padding: 5; -fx-border-color: #cccccc; -fx-border-radius: 3;"
+                       AnchorPane.topAnchor="30"
+                       AnchorPane.rightAnchor="40"/>
+            </AnchorPane>
 
 
-    <Canvas fx:id="gameCanvas"
-            width="1280"
-            height="720"
-            style="-fx-border-color: black;"
-            AnchorPane.topAnchor="50"
-            AnchorPane.leftAnchor="20"
-            AnchorPane.bottomAnchor="50"
-    />
+            <VBox spacing="15" style="-fx-padding: 20; -fx-background-color: #f0f0f0;"
+                  prefWidth="500">
 
 
-    <Label fx:id="timerLabel"
-           text="Время: 0.0 сек"
-           style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-background-color: #f0f0f0;"
-           AnchorPane.topAnchor="20"
-           AnchorPane.rightAnchor="20"/>
+                <Label text="ПАНЕЛЬ УПРАВЛЕНИЯ"
+                       style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #333;"/>
 
-    <HBox spacing="20" alignment="CENTER" AnchorPane.topAnchor="60" AnchorPane.rightAnchor="20">
-        <Label fx:id="boyCountLabel" text="Мальчики: 0" style="-fx-background-color: #e6f3ff; -fx-padding: 5 10;"/>
-        <Label fx:id="girlCountLabel" text="Девочки: 0" style="-fx-background-color: #ffe6f3; -fx-padding: 5 10;"/>
-        <Label fx:id="totalCountLabel" text="Всего: 0" style="-fx-background-color: #f0f0f0; -fx-padding: 5 10;"/>
-        <Label fx:id="totalSimulationTime" text="Время: 0.0 сек" style="-fx-background-color: #f0f0f0; -fx-padding: 5 10;"/>
-    </HBox>
+                <Separator/>
 
 
-    <HBox spacing="20" alignment="CENTER"
-          AnchorPane.bottomAnchor="20"
-          AnchorPane.leftAnchor="20"
-          AnchorPane.rightAnchor="20">
-        <Button fx:id="startButton"
-                text="Start"
-                onAction="#handleStartButton"
-                prefWidth="300"
-                style="-fx-background-color: #05f106; -fx-text-fill: #FFFFFF;"/>
-        <Button fx:id="stopButton"
-                text="Stop"
-                onAction="#handleStopButton"
-                prefWidth="300"
-                style="-fx-background-color: #ff0000; -fx-text-fill: #FFFFFF;"/>
-        <Button fx:id="showTimerButton"
-                text="Show timer"
-                onAction="#handleShowTimerButton"
-                prefWidth="300"
-                style="-fx-background-color: #000000; -fx-text-fill: #FFFFFF;"/>
-    </HBox>
-</AnchorPane>
+                <Label text="Управление:" style="-fx-font-weight: bold;"/>
+                <HBox spacing="10">
+                    <Button fx:id="startButtonPanel"
+                            text="СТАРТ (B)"
+                            onAction="#handleStartButton"
+                            prefWidth="200"
+                            style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+                    <Button fx:id="stopButtonPanel"
+                            text="СТОП (E)"
+                            onAction="#handleStopButton"
+                            prefWidth="200"
+                            style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
+                </HBox>
+
+
+
+                <RadioButton text="Показывать время (T)"
+                             fx:id="showTimeRadio"
+                             selected="true">
+
+                    <toggleGroup>
+                        <ToggleGroup fx:id="timeToggleGroup"/>
+                    </toggleGroup>
+
+                </RadioButton>
+
+                <RadioButton text="Скрывать время (T)"
+                             fx:id="hideTimeRadio"
+                             toggleGroup="$timeToggleGroup"/>
+
+                <Separator/>
+
+                <CheckBox fx:id="ShowInfoCheckBox" text="Показать информацию" style="-fx-font-weight: bold;"/>
+
+                <Label text="ПАРАМЕТРЫ СИМУЛЯЦИИ"
+                       style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #333;"/>
+                <GridPane hgap="10" vgap="10" style="-fx-padding: 5 0 10 0;">
+
+
+                    <Label text="N1 (период мальчиков):"
+                           GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                    <TextField fx:id="n1Field"
+                               text="1.0"
+                               promptText="секунды"
+                               prefWidth="100"
+                               GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+
+                    <Label text="P1 (вероятность):"
+                           GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                    <ComboBox fx:id="p1Combo"
+                              value="70%"
+                              prefWidth="100"
+                              GridPane.rowIndex="1" GridPane.columnIndex="1">
+                        <items>
+                            <FXCollections fx:factory="observableArrayList">
+                                <String fx:value="10%"/>
+                                <String fx:value="20%"/>
+                                <String fx:value="30%"/>
+                                <String fx:value="40%"/>
+                                <String fx:value="50%"/>
+                                <String fx:value="60%"/>
+                                <String fx:value="70%"/>
+                                <String fx:value="80%"/>
+                                <String fx:value="90%"/>
+                                <String fx:value="100%"/>
+                            </FXCollections>
+                        </items>
+                    </ComboBox>
+
+
+                    <Label text="N2 (период девочек):"
+                           GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                    <TextField fx:id="n2Field"
+                               text="1.5"
+                               promptText="секунды"
+                               prefWidth="100"
+                               GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+
+                    <Label text="P2 (вероятность):"
+                           GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                    <ComboBox fx:id="p2Combo"
+                              value="50%"
+                              prefWidth="100"
+                              GridPane.rowIndex="3" GridPane.columnIndex="1">
+                        <items>
+                            <FXCollections fx:factory="observableArrayList">
+                                <String fx:value="10%"/>
+                                <String fx:value="20%"/>
+                                <String fx:value="30%"/>
+                                <String fx:value="40%"/>
+                                <String fx:value="50%"/>
+                                <String fx:value="60%"/>
+                                <String fx:value="70%"/>
+                                <String fx:value="80%"/>
+                                <String fx:value="90%"/>
+                                <String fx:value="100%"/>
+                            </FXCollections>
+                        </items>
+                    </ComboBox>
+
+                </GridPane>
+
+            </VBox>
+        </SplitPane>
+    </center>
+
+
+</BorderPane>

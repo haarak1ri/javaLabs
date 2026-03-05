@@ -1,16 +1,18 @@
 package com.example.labs.model;
 
+import com.example.labs.core.Habitat;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 
 import java.util.Random;
 
-import static com.example.labs.core.Habitat.getWidth;
+
 
 public abstract class Student implements IBehaviour {
     protected float x,y;
     protected Image image;
     public static final int SIZE = 50;
+    Habitat h = Habitat.getHabitat();
 
     public Student(float x, float y, Image image) {
         this.x = x;
@@ -33,7 +35,7 @@ public abstract class Student implements IBehaviour {
     }
     public void move(float deltaTime) {
         x += 100 * deltaTime;
-        if(x > getWidth()) {
+        if(x > h.getWidth()) {
             x = -SIZE;
         }
     }

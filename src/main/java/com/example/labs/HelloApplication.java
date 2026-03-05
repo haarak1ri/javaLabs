@@ -15,10 +15,10 @@ public class HelloApplication extends Application {
 
         FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("hello-view.fxml"));
 
-        Scene scene = new Scene(fxmlLoader.load(), 1320, 820);
+        Scene scene = new Scene(fxmlLoader.load(), 1920, 1080);
         HelloController controller = fxmlLoader.getController();
 
-        Habitat habitat = new Habitat(1280,720);
+        Habitat habitat = Habitat.getHabitat(1280,920);
         TimerService timer = new TimerService(habitat);
 
         controller.setHabitat(habitat);

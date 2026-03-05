@@ -9,12 +9,13 @@ import com.example.labs.model.Student;
 import java.util.*;
 
 public class Habitat {
-    private final float N1 = 1.0f;
-    private final float N2 = 1.5f;
-    private final double P1 = 0.7;
-    private final double P2 = 0.5;
-    private static int width;
-    private static int height;
+    private static Habitat habitat;
+    private float N1 = 1.0f;
+    private float N2 = 1.5f;
+    private double P1 = 0.7;
+    private double P2 = 0.5;
+    private int width;
+    private int height;
 
     private float boyTimer = 0;
     private float girlTimer = 0;
@@ -22,13 +23,33 @@ public class Habitat {
     private int boyCount = 0;
     private int girlCount = 0;
 
-    List<IBehaviour> objects = new ArrayList<>();
+    private List<IBehaviour> objects = new ArrayList<>();
 
 
-    public Habitat(int width, int height){
+    private Habitat(int width, int height){
         this.width = width;
         this.height = height;
     }
+
+    public static Habitat getHabitat(int width, int height) {
+        if(habitat == null) {
+            habitat = new Habitat(width,height);
+        }
+        return habitat;
+    }
+    public void setParams(float n1, float n2, double p1, double p2) {
+        this.N1 = n1;
+        this.N2 = n2;
+        this.P1 = p1;
+        this.P2 = p2;
+    }
+    public static Habitat getHabitat() {
+        if (habitat == null) {
+            throw new IllegalStateException("Habitat not initialized with dimensions");
+        }
+        return habitat;
+    }
+
     public void updateAll(float deltaTime) {
         simulationTime += deltaTime;
         boyTimer += deltaTime;
@@ -92,11 +113,13 @@ public class Habitat {
         return objects.size();
     }
 
-    public static int getWidth() {
+    public final int getWidth() {
         return width;
     }
 
-    public static int getHeight() {
+    public final int getHeight() {
         return height;
     }
+
+
 }

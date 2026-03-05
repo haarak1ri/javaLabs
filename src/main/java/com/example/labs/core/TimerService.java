@@ -7,6 +7,7 @@ public class TimerService {
     private Habitat habitat;
     private long lastTime = 0;
     private boolean isRunning = false;
+    private boolean onPause = false;
 
 
 
@@ -43,11 +44,28 @@ public class TimerService {
         isRunning = false;
     }
 
+    public void pause() {
+        timer.stop();
+        isRunning = false;
+        onPause = true;
+    }
+
+
     public boolean isRunning() {
         return isRunning;
+    }
+    public boolean isOnPause() {
+        return onPause;
     }
 
     public void setOnUpdate(Runnable someAction) {
         this.onUpdate = someAction;
+    }
+
+    public void setIsRunning(boolean state) {
+        this.isRunning = state;
+    }
+    public void setIsOnPause(boolean state) {
+        this.onPause = state;
     }
 }
