@@ -12,12 +12,13 @@ public abstract class Student implements IBehaviour {
     protected float x,y;
     protected Image image;
     public static final int SIZE = 50;
-    Habitat h = Habitat.getHabitat();
+
 
     protected float creationTime = 0;
     protected long creationTimeNanos = 0;
     protected float lifeTime;
     protected int id;
+    private final Object positionLock = new Object();
 
     public Student(int id,float x, float y, Image image, float lifeTime, float creationTime, long creationTimeNanos) {
         this.id = id;
@@ -28,19 +29,29 @@ public abstract class Student implements IBehaviour {
         this.creationTime = creationTime;
         this.creationTimeNanos = creationTimeNanos;
     }
-    public float getX() {return x;}
-    public float getY() {return y;}
+    public float getX() {
+        synchronized (positionLock) {
+            return x;
+        }
+    }
+    public float getY() {
+        synchronized (positionLock) {
+            return y;
+        }
+    }
 
 
 
     @Override
     public void render(GraphicsContext gc) {
-        gc.drawImage(image,x,y,SIZE,SIZE);
+        synchronized (positionLock) {
+            gc.drawImage(image,x,y,SIZE,SIZE);
+        }
     }
 
     @Override
     public void update(float deltaTime) {
-        move(deltaTime);
+//        move(deltaTime);
     }
 
     @Override
@@ -60,12 +71,18 @@ public abstract class Student implements IBehaviour {
         return this.id;
     }
 
-    public void move(float deltaTime) {
-//        x += 100 * deltaTime;
-//        if(x > h.getWidth()) {
-//            x = -SIZE;
-//        }
+//    public void move(float deltaTime) {
+////        x += 100 * deltaTime;
+////        if(x > h.getWidth()) {
+////            x = -SIZE;
+////        }
+//    }
+
+
+    public void setPosition(float newX, float newY) {
+        synchronized (positionLock) {
+            this.x = newX;
+            this.y = newY;
+        }
     }
-
-
 }

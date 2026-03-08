@@ -23,6 +23,7 @@
 <?import javafx.scene.control.ComboBox?>
 <?import java.lang.String?>
 
+<?import java.lang.Integer?>
 <BorderPane fx:id="root"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.example.labs.HelloController"
@@ -208,12 +209,76 @@
                                GridPane.rowIndex="5" GridPane.columnIndex="1"/>
 
 
+
                 </GridPane>
                 <Button fx:id="currentObjects"
                         text="Текущие объекты"
                         onAction="#handleGetCurrentObjectsButton"
                         prefWidth="200"
-                        style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+                        style="-fx-background-color: #ADD8E6; -fx-text-fill: white;"/>
+
+                <Label fx:id = "boysMoveLabel" text="Движение парней (ВКЛ/ВЫКЛ)" style="-fx-font-weight: bold;"/>
+
+                <HBox spacing="10">
+
+                    <Button fx:id="boysAIstart"
+                            text="ВКЛ"
+                            onAction="#handleBoysAIStartButton"
+                            prefWidth="70"
+                            style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+                    <Button fx:id="boysAIstop"
+                            text="ВЫКЛ"
+                            onAction="#handleBoysAIStopButton"
+                            prefWidth="70"
+                            style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
+                </HBox>
+                <Label fx:id = "girlsMoveLabel" text="Движение девушек (ВКЛ/ВЫКЛ)" style="-fx-font-weight: bold;"/>
+                <HBox spacing="10">
+                    <Button fx:id="girlsAIstart"
+                            text="ВКЛ"
+                            onAction="#handleGirlsAIStartButton"
+                            prefWidth="70"
+                            style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+                    <Button fx:id="girlsAIstop"
+                            text="ВЫКЛ"
+                            onAction="#handleGirlsAIStopButton"
+                            prefWidth="70"
+                            style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
+
+                </HBox>
+
+
+                <Label fx:id = "priority" text="Установить приоритет: " style="-fx-font-weight: bold;"/>
+
+                <GridPane hgap="10" vgap="10" style="-fx-padding: 5 0 10 0;">
+                    <Label text="Приоритет парней:"
+                           GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                    <ComboBox fx:id="bpr"
+                              value="1"
+                              prefWidth="100" GridPane.rowIndex="0" GridPane.columnIndex="1" >
+                        <items>
+                            <FXCollections fx:factory="observableArrayList">
+                                <Integer fx:value="1"/>
+                                <Integer fx:value="5"/>
+                                <Integer fx:value="10"/>
+                            </FXCollections>
+                        </items>
+                    </ComboBox>
+                    <Label text="Приоритет девушек:"
+                           GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                    <ComboBox fx:id="gpr"
+                              value="1"
+                              prefWidth="100" GridPane.rowIndex="1" GridPane.columnIndex="1" >
+                        <items>
+                            <FXCollections fx:factory="observableArrayList">
+                                <Integer fx:value="1"/>
+                                <Integer fx:value="5"/>
+                                <Integer fx:value="10"/>
+                            </FXCollections>
+                        </items>
+                    </ComboBox>
+
+                </GridPane>
 
             </VBox>
         </SplitPane>

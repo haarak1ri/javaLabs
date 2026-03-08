@@ -2,32 +2,21 @@ package com.example.labs;
 
 import com.example.labs.core.Habitat;
 import com.example.labs.core.TimerService;
-import com.example.labs.model.IBehaviour;
-import javafx.animation.AnimationTimer;
-import javafx.application.Application;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
-import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
-import javafx.stage.Stage;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 
 public class HelloController  {
     //лаба 1
@@ -73,7 +62,15 @@ public class HelloController  {
     @FXML private TextField n1TimeOfLifeField;
     @FXML private TextField n2TimeOfLifeField;
     @FXML private Button currentObjects;
-
+    //лаба 4
+    @FXML private Button boysAIstart;
+    @FXML private Button boysAIstop;
+    @FXML private Button girlsAIstart;
+    @FXML private Button girlsAIstop;
+    @FXML private Label boysMoveLabel;
+    @FXML private Label girlssMoveLabel;
+    @FXML private ComboBox<Integer> bpr;
+    @FXML private ComboBox<Integer> gpr;
 
 
     private GraphicsContext gc;
@@ -83,46 +80,21 @@ public class HelloController  {
 
 
     private BooleanProperty simulationRunning = new SimpleBooleanProperty(false);
+    private BooleanProperty boysAIRunning = new SimpleBooleanProperty(true); //устанавливаем здесь чтобы не выносить в отдельный метод
+    private BooleanProperty girlsAIRunning = new SimpleBooleanProperty(true);
 
     @FXML
     public void initialize() {
-
-        simulationRunning.addListener((obs, notRunning, Running) -> {
-            if (Running ) {
-                startSimulation();
-            }
-            else if (!Running) {
-                stopSimulation();
-            }
-
-        });
-
-        timeToggleGroup.selectedToggleProperty().addListener((obs,oldToggle,newToggle)
-    -> {if(newToggle == showTimeRadio) {
-            timerLabel.setVisible(true);
-    }   else {
-            timerLabel.setVisible(false);
-        }
-        });
-
-        n1Field.setText("1.0");
-        n2Field.setText("1.5");
-        p1Combo.setValue("70%");
-        p2Combo.setValue("50%");
-        n1TimeOfLifeField.setText("5.0");
-        n2TimeOfLifeField.setText("7.0");
-
-
         root.addEventFilter(KeyEvent.KEY_PRESSED, this::handleKeyPress);
-
         this.gc = gameCanvas.getGraphicsContext2D();
+        setupDefaultValues();
+        bindAllStates(); // доступности кнопок, видимости таймеров
+        setupAllValidations(); //валидации ввода вывода
 
-        showTimerButton.setDisable(false);
-
+        startStopSimulationSetup();
+        threadsSetup();
         clearCanvas();
-        setupValidation();
-        setupLifeTime();
-        showParams();
+
     }
 
     private void clearCanvas() {
@@ -131,18 +103,119 @@ public class HelloController  {
         }
     }
 
+    //сетап видимости кнопок, валидации для полей и списков
+    private void bindAllStates() {
+        bindAIButtonsState();
+        bindStartStopButtonsState();
+        bindCurrentObjButtonState();
+        bindParamsState();
+        bindTimerLabelState();
+    }
+    private void setupAllValidations() {
+        setupN1N2Validation();
+        setupPriorityValidation();
+        setupLifeTimeValidation();
+    }
+    //сетап значений по умолчанию
+    private void setupDefaultValues() {
+        n1Field.setText("1.0");
+        n2Field.setText("1.5");
+        p1Combo.setValue("70%");
+        p2Combo.setValue("50%");
+        n1TimeOfLifeField.setText("5.0");
+        n2TimeOfLifeField.setText("7.0");
+        bpr.setValue(5);
+        gpr.setValue(5);
+    }
+    //реализация доступной и видимостей кнопок
+    private void bindAIButtonsState() {
 
+        boysAIstart.disableProperty().bind(boysAIRunning.or(simulationRunning.not()));
+        boysAIstop.disableProperty().bind(boysAIRunning.not().or(simulationRunning.not()));
+        girlsAIstart.disableProperty().bind(girlsAIRunning.or(simulationRunning.not()));
+        girlsAIstop.disableProperty().bind(girlsAIRunning.not().or(simulationRunning.not()));
+    }
+    private void bindStartStopButtonsState() {
+        startButton.disableProperty().bind(simulationRunning);
+        stopButton.disableProperty().bind(simulationRunning.not());
+        startButtonPanel.disableProperty().bind(simulationRunning);
+        stopButtonPanel.disableProperty().bind(simulationRunning.not());
+    }
+    private void bindCurrentObjButtonState() {
+        currentObjects.disableProperty().bind(simulationRunning.not());
 
+    }
+    private void bindParamsState() {
+        n1Field.disableProperty().bind(simulationRunning);
+        n2Field.disableProperty().bind(simulationRunning);
+        n1TimeOfLifeField.disableProperty().bind(simulationRunning);
+        n2TimeOfLifeField.disableProperty().bind(simulationRunning);
+        p1Combo.disableProperty().bind(simulationRunning);
+        p2Combo.disableProperty().bind(simulationRunning);
+        bpr.disableProperty().bind(simulationRunning);
+        gpr.disableProperty().bind(simulationRunning);
+    }
+    private void bindTimerLabelState() {
+        timerLabel.visibleProperty().bind(timeToggleGroup.selectedToggleProperty().isEqualTo(showTimeRadio));
+    }
+
+    private void startStopSimulationSetup() {
+        simulationRunning.addListener((obs, oldVal, newVal) -> {
+            if (newVal ) {
+                startSimulation();
+            }
+            else if (!newVal) {
+                stopSimulation();
+            }
+
+        });
+    }
+    private void threadsSetup() {
+        boysAIRunning.addListener((obs,oldVal, newVal)-> {
+            if(habitat != null) {
+                if(newVal) {
+                    habitat.boysAIresume();
+                } else {
+                    habitat.boysAIpause();
+                }
+            }
+
+        });
+
+        girlsAIRunning.addListener((obs,oldVal, newVal)-> {
+            if(habitat != null) {
+                if(newVal) {
+                    habitat.girlsAIresume();
+                } else {
+                    habitat.girlsAIpause();
+                }
+            }
+        });
+    }
+    private void setupPriorityValidation() {
+        bpr.valueProperty().addListener((obs,oldVal,newVal) -> {
+            if(newVal == null){
+                bpr.setValue(5);
+            }
+        });
+        gpr.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal == null) {
+                gpr.setValue(5);
+            }
+        });
+    }
+
+    //работа с dependecy inj
     public void setHabitat(Habitat habitat) {
         this.habitat = habitat;
     }
-
     public void setTimer(TimerService timerService) {
         this.timerService = timerService;
         timerService.setOnUpdate(() -> {refreshDisplay();
             updateTimerDisplay();
          });
     }
+
     private void updateTimerDisplay() {
         if (timerLabel != null && habitat != null) {
 
@@ -159,7 +232,6 @@ public class HelloController  {
         }
 
     }
-
     private void executeActionForKey(KeyCode code) {
         switch (code) {
             case B:
@@ -173,7 +245,6 @@ public class HelloController  {
                 break;
         }
     }
-
     private void toggleTimer() {
         if (showTimeRadio.isSelected()) {
             hideTimeRadio.setSelected(true);
@@ -182,49 +253,34 @@ public class HelloController  {
         }
     }
 
-
     private void startSimulation() {
         if(!timerService.isRunning()) {
             float n1 = Float.parseFloat(n1Field.getText());
             float n2 = Float.parseFloat(n2Field.getText());
             double p1 = getProbabilityFromCombo(p1Combo);
             double p2 = getProbabilityFromCombo(p2Combo);
+            int boysPriority = bpr.getValue() != null ? bpr.getValue() : 5;
+            int girlsPriority = gpr.getValue() != null ? gpr.getValue() : 5;
+
             float nt1 = Float.parseFloat(n1TimeOfLifeField.getText());
             float nt2 = Float.parseFloat(n2TimeOfLifeField.getText());
-            habitat.setParams(n1, n2, p1, p2, nt1, nt2);
+            habitat.setParams(n1, n2, p1, p2, nt1, nt2, boysPriority,girlsPriority);
             habitat.reset();
+            habitat.startAI();
             timerService.start();
         }
-        startButton.setDisable(true);
-        stopButton.setDisable(false);
-        startButtonPanel.setDisable(true);
-        stopButtonPanel.setDisable(false);
-        currentObjects.setDisable(false);
-        hideParams();
-
+        System.out.println("Созданы два потока с приоритетмами Boy: " + habitat.getBoysPriority() + " Girl " + habitat.getGirlsPriority());
     }
 
     private void stopSimulation() {
 
         if(timerService.isRunning()) {
             timerService.pause();
-
             if(ShowInfoCheckBox.isSelected()) {
-                startButton.setDisable(true);
-                stopButton.setDisable(true);
-                startButtonPanel.setDisable(true);
-                stopButtonPanel.setDisable(true);
-                currentObjects.setDisable(true);
-                hideParams();
                 showModalDialog();
             } else {
+                habitat.stopAI();
                 timerService.stop();
-                startButton.setDisable(false);
-                stopButton.setDisable(true);
-                startButtonPanel.setDisable(false);
-                stopButtonPanel.setDisable(true);
-                currentObjects.setDisable(true);
-                showParams();
                 habitat.reset();
                 clearCanvas();
                 timerLabel.setText("Время: 0.0 сек");
@@ -238,15 +294,12 @@ public class HelloController  {
     public void handleStartButton(ActionEvent actionEvent) {
         simulationRunning.set(true);
     }
-
     public void handleStopButton(ActionEvent actionEvent) {
         simulationRunning.set(false);
     }
-
     public void handleShowTimerButton(ActionEvent actionEvent) {
         toggleTimer();
     }
-
     public void refreshDisplay() {
         if (habitat != null && gc != null) {
             clearCanvas();
@@ -260,12 +313,10 @@ public class HelloController  {
     public void handleStartButtonPanel(ActionEvent actionEvent) {
         simulationRunning.set(true);;
 }
-
     public void handleStopButtonPanel(ActionEvent actionEvent) {
         simulationRunning.set(false);
     }
-
-    private void setupValidation() {
+    private void setupN1N2Validation() {
         n1Field.textProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal.matches("\\d*\\.?\\d*")) {
                 n1Field.setText(oldVal);
@@ -308,25 +359,6 @@ public class HelloController  {
         });
     }
 
-    private void showParams() {
-        n1Field.setDisable(false);
-        n2Field.setDisable(false);
-        n1TimeOfLifeField.setDisable(false);
-        n2TimeOfLifeField.setDisable(false);
-        p1Combo.setDisable(false);
-        p2Combo.setDisable(false);
-    }
-    private void hideParams() {
-        n1Field.setDisable(true);
-        n2Field.setDisable(true);
-        n1TimeOfLifeField.setDisable(true);
-        n2TimeOfLifeField.setDisable(true);
-        p1Combo.setDisable(true);
-        p2Combo.setDisable(true);
-    }
-
-
-
 
     private double getProbabilityFromCombo(ComboBox<String> combo) {
         String value = combo.getValue();
@@ -340,7 +372,6 @@ public class HelloController  {
         }
     }
 
-    //2я лаб
     private void showModalDialog() {
         Dialog<Boolean> dialog = new Dialog<>();
         dialog.setTitle("Информация о симуляции");
@@ -378,28 +409,22 @@ public class HelloController  {
 
         Optional<Boolean> result = dialog.showAndWait();
         if(result.isPresent() && result.get()) {
+            habitat.stopAI();
             timerService.stop();
             habitat.reset();
             clearCanvas();
-            startButton.setDisable(false);
-            stopButton.setDisable(true);
-            startButtonPanel.setDisable(false);
-            stopButtonPanel.setDisable(true);
-            currentObjects.setDisable(true);
-            showParams();
             timerLabel.setText("Время: 0.0 сек");
-
-
         }
         else {
             timerService.start();
             simulationRunning.set(true);
+
         }
     }
 
 //лаба 3=================================================================================================================
 
-    private void setupLifeTime() {
+    private void setupLifeTimeValidation() {
         n1TimeOfLifeField.textProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal.matches("\\d*\\.?\\d*")) {
                 n1TimeOfLifeField.setText(oldVal);
@@ -440,12 +465,9 @@ public class HelloController  {
             }
         });
     }
-
-
     public void handleGetCurrentObjectsButton(ActionEvent actionEvent) {
        getCurrentObjects();
     }
-
     private void getCurrentObjects() {
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("Информация о симуляции");
@@ -518,6 +540,16 @@ public class HelloController  {
         });
         dialog.showAndWait();
     }
-
-
+    public void handleBoysAIStartButton(ActionEvent actionEvent) {
+        boysAIRunning.set(true);
+    }
+    public void handleBoysAIStopButton(ActionEvent actionEvent) {
+        boysAIRunning.set(false);
+    }
+    public void handleGirlsAIStartButton(ActionEvent actionEvent) {
+        girlsAIRunning.set(true);
+    }
+    public void handleGirlsAIStopButton(ActionEvent actionEvent) {
+        girlsAIRunning.set(false);
+    }
 }

@@ -2,7 +2,6 @@ package com.example.labs.core;
 import com.example.labs.model.BoyStudent;
 import com.example.labs.model.GirlStudent;
 import com.example.labs.model.IBehaviour;
-import com.example.labs.core.TimerService;
 import javafx.scene.canvas.GraphicsContext;
 import com.example.labs.model.Student;
 import java.util.Random;
@@ -22,18 +21,28 @@ public class Habitat {
     private int boyCount = 0;
     private int girlCount = 0;
 
-
+    private List<IBehaviour> objects = new LinkedList<>();
     private Set<Integer> activeIds = new HashSet<>();
-
     private long treeMapTimeNanos = 0;
     private TreeMap<Long,Integer> birthToId = new TreeMap<>();
     private float n1TimeOfLife = 1.0f;
     private float n2TimeOfLife = 1.0f;
     private Random random = new Random();
 
+    //лаба 4
+    private final Object objectsLock = new Object();
+    private final Object activeIdsLock = new Object();
+    private final Object birthToIdLock = new Object();
 
-    private List<IBehaviour> objects = new LinkedList<>();
+    private BaseAIBoys boysAI;
+    private BaseAIGirls girlsAI;
+    private boolean isAiRunning = false;
+    private float boysVelocity = 50.0f;
+    private float girlsVelocity = 50.0f;
 
+    private float circleRadius = 50.0f;
+    private int boyPriority = Thread.NORM_PRIORITY;
+    private int girlPriority = Thread.NORM_PRIORITY;
 
     private Habitat(int width, int height){
         this.width = width;
@@ -56,14 +65,6 @@ public class Habitat {
         }
         return habitat;
     }
-    public void setParams(float n1, float n2, double p1, double p2, float nt1, float nt2) {
-        this.N1 = n1;
-        this.N2 = n2;
-        this.P1 = p1;
-        this.P2 = p2;
-        this.n1TimeOfLife = nt1;
-        this.n2TimeOfLife = nt2;
-    }
     public static Habitat getHabitat() {
         if (habitat == null) {
             throw new IllegalStateException("Habitat not initialized with dimensions");
@@ -71,93 +72,151 @@ public class Habitat {
         return habitat;
     }
 
+    public void setParams(float n1, float n2, double p1, double p2, float nt1, float nt2, int boyPriority, int girlPriority) {
+        this.N1 = n1;
+        this.N2 = n2;
+        this.P1 = p1;
+        this.P2 = p2;
+        this.n1TimeOfLife = nt1;
+        this.n2TimeOfLife = nt2;
+        this.boyPriority = boyPriority;
+        this.girlPriority = girlPriority;
+        if (boysAI != null) {
+            boysAI.setPriority(boyPriority);
+        }
+        if (girlsAI != null) {
+            girlsAI.setPriority(girlPriority);
+        }
+    }
+
+
     public void updateAll(float deltaTime) {
         simulationTime += deltaTime;
         treeMapTimeNanos += (long)(deltaTime * 1_000_000_000L);
         boyTimer += deltaTime;
         girlTimer += deltaTime;
 
-        while (boyTimer >= N1) {
-            boyTimer -= N1;
-            if (Math.random() < P1) {
-                float x = (float)Math.random() * (width-Student.SIZE);
-                float y = (float)Math.random() * (height-Student.SIZE);
-                int id = generateId();
-                objects.add(new BoyStudent(id, x, y, n1TimeOfLife, simulationTime,treeMapTimeNanos));
-                System.out.println("Объект с " + id + " создан в " + simulationTime );
-                activeIds.add(id);
-                birthToId.put(treeMapTimeNanos,id);
-                boyCount++;
-            }
-        }
-        while (girlTimer >= N2) {
-            girlTimer -= N2;
-            if (Math.random() < P2) {
-                float x = (float)Math.random() * (width-Student.SIZE);
-                float y = (float)Math.random() * (height-Student.SIZE);
-                int id = generateId();
-                objects.add(new GirlStudent(id, x,y,n2TimeOfLife, simulationTime,treeMapTimeNanos));
-                System.out.println("Объект с " + id + " создан в " + simulationTime );
-                activeIds.add(id);
-                birthToId.put(treeMapTimeNanos,id);
-                girlCount++;
-            }
+        synchronized (objectsLock) {
+            generateObject();
         }
 
-        Iterator<IBehaviour> it = objects.iterator();
-        while(it.hasNext()) {
-            IBehaviour obj = it.next();
-            obj.update(deltaTime);
-            if(simulationTime >= obj.getCreationTime() + obj.getLifeTime()) {
-                it.remove();
-                System.out.println("Объект с " + obj.getId() + " удален в " + simulationTime );
-                activeIds.remove(obj.getId());
-                birthToId.remove(obj.getCreationTimeNanos());
-            }
-        }
+        removeDeadObjects();
 
     }
+
+    public void generateObject() {
+
+        synchronized (objectsLock) {
+            while (boyTimer >= N1) {
+                boyTimer -= N1;
+                if (Math.random() < P1) {
+                    float x = (float)Math.random() * (width-Student.SIZE);
+                    float y = (float)Math.random() * (height-Student.SIZE);
+                    int id = generateId();
+                    objects.add(new BoyStudent(id, x, y, n1TimeOfLife, simulationTime, treeMapTimeNanos));
+                    System.out.println("Объект с " + id + " создан в " + simulationTime);
+
+                    synchronized (activeIdsLock) {
+                        activeIds.add(id);
+                    }
+                    synchronized (birthToIdLock) {
+                        birthToId.put(treeMapTimeNanos, id);
+                    }
+                    boyCount++;
+                }
+            }
+            while (girlTimer >= N2) {
+                girlTimer -= N2;
+                if (Math.random() < P2) {
+                    float x = (float)Math.random() * (width-Student.SIZE);
+                    float y = (float)Math.random() * (height-Student.SIZE);
+                    int id = generateId();
+                    objects.add(new GirlStudent(id, x, y, n2TimeOfLife, simulationTime, treeMapTimeNanos));
+                    System.out.println("Объект с " + id + " создан в " + simulationTime);
+                    synchronized (activeIdsLock) {
+                        activeIds.add(id);
+                    }
+                    synchronized (birthToIdLock) {
+                        birthToId.put(treeMapTimeNanos, id);
+                    }
+                    girlCount++;
+                }
+            }
+        }
+    }
+
+    private void removeDeadObjects() {
+        synchronized (objectsLock) {
+            Iterator<IBehaviour> it = objects.iterator();
+            while(it.hasNext()) {
+                IBehaviour obj = it.next();
+                if(simulationTime >= obj.getCreationTime() + obj.getLifeTime()) {
+                    it.remove();
+                    System.out.println("Объект с " + obj.getId() + " удален в " + simulationTime);
+
+                    synchronized (activeIdsLock) {
+                        activeIds.remove(obj.getId());
+                    }
+                    synchronized (birthToIdLock) {
+                        birthToId.remove(obj.getCreationTimeNanos());
+                    }
+                }
+            }
+        }
+    }
+
     public void renderAll(GraphicsContext gc) {
-        for (IBehaviour obj : objects) {
-            obj.render(gc);
+        synchronized (objectsLock) {
+            for (IBehaviour obj : objects) {
+                obj.render(gc);
+            }
         }
     }
-
-
-
 
     public void reset() {
-        objects.clear();
-        activeIds.clear();
-        birthToId.clear();
+        stopAI();
+        synchronized (objectsLock) {
+            synchronized (activeIdsLock) {
+                synchronized (birthToIdLock) {
+                    objects.clear();
+                    activeIds.clear();
+                    birthToId.clear();
 
-        boyTimer = 0;
-        girlTimer = 0;
-        simulationTime = 0;
-        treeMapTimeNanos = 0;
-        boyCount = 0;
-        girlCount = 0;
+                    boyTimer = 0;
+                    girlTimer = 0;
+                    simulationTime = 0;
+                    treeMapTimeNanos = 0;
+                    boyCount = 0;
+                    girlCount = 0;
+                }
+            }
+        }
+        this.boysAI = new BaseAIBoys(this, boyPriority, boysVelocity);
+        this.girlsAI = new BaseAIGirls(this, girlPriority, girlsVelocity);
+        isAiRunning = false;
         System.out.println("Habitat reset. simulationTime = 0");
-
-
     }
+
     public List<IBehaviour> getObjects() {
-        return objects;
+        synchronized (objectsLock) {
+            return new LinkedList<>(objects);
+        }
+
     }
 
     public float getSimulationTime() {
         return simulationTime;
     }
 
-    public int getBoyCount() {
+    public synchronized int getBoyCount() {
         return boyCount;
     }
 
-    public int getGirlCount() {
+    public synchronized int getGirlCount() {
         return girlCount;
     }
 
-    public int getTotalCount() {
+    public synchronized int getTotalCount() {
         return objects.size();
     }
 
@@ -178,17 +237,118 @@ public class Habitat {
             if (attempts > 1000000) {
                 throw new RuntimeException("Невозможно сгенерировать уникальный ID: все числа заняты");
         }
-        } while (activeIds.contains(newId));
+        } while (checkActiveId(newId));
 
         return newId;
     }
+    public boolean checkActiveId(int id) {
+        synchronized (activeIdsLock) {
+            return activeIds.contains(id);
+        }
+    }
     //лаба3=======================================================================================
     public TreeMap<Long,Integer> getBirthToId() {
-        return birthToId;
+        synchronized (birthToIdLock) {return new TreeMap<Long,Integer>(birthToId);}
     }
     public Set<Integer> getActiveIds() {
-        return activeIds;
+        synchronized (activeIdsLock) {return new HashSet<>(activeIds);
+        }
     }
+    //лаба4======================================================================================
+    public List<IBehaviour> getBoysStudents() {
+        synchronized (objectsLock) {
+            List<IBehaviour> boys = new LinkedList<>();
+            for(IBehaviour obj : objects) {
+                if(obj instanceof BoyStudent) {
+                    boys.add(obj);
+                }
+            }
+            return boys;
+        }
+
+    }
+    public List<IBehaviour> getGirlStudents() {
+        synchronized (objectsLock) {
+            List<IBehaviour> girls = new LinkedList<>();
+            for(IBehaviour obj : objects) {
+                if(obj instanceof GirlStudent) {
+                    girls.add(obj);
+                }
+            }
+            return girls;
+        }
+    }
+
+    public void startAI() {
+        if(!isAiRunning) {
+            boysAI.start();
+            girlsAI.start();
+            isAiRunning = true;
+            System.out.println("AI потоки запущены");
+        }
+    }
+    public void stopAI() {
+        if(isAiRunning) {
+            boysAI.stop();
+            girlsAI.stop();
+            isAiRunning = false;
+            System.out.println("AI потоки остановлены");
+        }
+    }
+
+    public void boysAIpause() {
+        boysAI.pause();
+        System.out.println("AI парней на паузе");
+    }
+    public void boysAIresume() {
+        boysAI.resume();
+
+    }
+
+    public void girlsAIpause() {
+        girlsAI.pause();
+        System.out.println("AI девушек на паузе");
+    }
+    public void girlsAIresume() {
+        girlsAI.resume();
+    }
+
+    public void boysAIsetPriority(int priority) {
+        this.boyPriority = priority;
+        if(boysAI != null ) {
+            boysAI.setPriority(priority);
+        }
+    }
+    public void setGirlsPriority(int priority) {
+        this.girlPriority = priority;
+        if (girlsAI != null) {
+            girlsAI.setPriority(priority);
+        }
+    }
+    public int getBoysPriority() {
+        return boysAI.getPriority();
+    }
+    public int getGirlsPriority() {
+        return girlsAI.getPriority();
+    }
+    public boolean isAIRunning() {
+        return isAiRunning;
+    }
+
+    public void setBoysVelocity(float v ){
+        this.boysVelocity = v;
+        if (boysAI != null) {
+            boysAI.setSpeed(v);
+        }
+    }
+    public void setGirlsVelocity(float v) {
+        this.girlsVelocity = v;
+        if (girlsAI != null) {
+            girlsAI.setSpeed(v);
+        }
+    }
+
+
 }
 
 
