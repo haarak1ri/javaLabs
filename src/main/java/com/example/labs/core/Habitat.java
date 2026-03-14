@@ -2,10 +2,18 @@ package com.example.labs.core;
 import com.example.labs.model.BoyStudent;
 import com.example.labs.model.GirlStudent;
 import com.example.labs.model.IBehaviour;
+import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
 import javafx.scene.canvas.GraphicsContext;
 import com.example.labs.model.Student;
+
+import java.io.IOException;
+import java.io.PipedReader;
+import java.io.PipedWriter;
+import java.lang.reflect.Type;
 import java.util.Random;
 import java.util.*;
+
 
 public class Habitat {
     private static Habitat habitat;
@@ -24,7 +32,7 @@ public class Habitat {
     private List<IBehaviour> objects = new LinkedList<>();
     private Set<Integer> activeIds = new HashSet<>();
     private long treeMapTimeNanos = 0;
-    private TreeMap<Long,Integer> birthToId = new TreeMap<>();
+    private TreeMap<Integer,Long> birthToId = new TreeMap<>();
     private float n1TimeOfLife = 1.0f;
     private float n2TimeOfLife = 1.0f;
     private Random random = new Random();
@@ -36,6 +44,7 @@ public class Habitat {
 
     private BaseAIBoys boysAI;
     private BaseAIGirls girlsAI;
+
     private boolean isAiRunning = false;
     private float boysVelocity = 50.0f;
     private float girlsVelocity = 50.0f;
@@ -44,9 +53,59 @@ public class Habitat {
     private int boyPriority = Thread.NORM_PRIORITY;
     private int girlPriority = Thread.NORM_PRIORITY;
 
+    // лаба 5
+    //канал 1
+    private PipedWriter commandWriter;
+    private PipedReader commandReader;
+    //канал 2
+    private PipedWriter responseWriter;
+    private PipedReader responseReader;
+
+    private ConsoleWriter consoleWriter;
+    private ConsoleReader consoleReader;
+    private PipedReader responseReaderForUI;
+    private UICommandListener pendingUIListener;
+    private Gson gson = new GsonBuilder()
+            .setPrettyPrinting()
+            .excludeFieldsWithoutExposeAnnotation()
+            .registerTypeAdapter(IBehaviour.class, new IBehaviourDeserializer())
+            .create();
+    private FileProvider fileProvider;
+    private boolean startWithFile;
+
+
+
+    public void setFileProvider(FileProvider fileProvider) {
+        this.fileProvider = fileProvider;
+    }
+
+
     private Habitat(int width, int height){
         this.width = width;
         this.height = height;
+    }
+
+    private void initConsole() throws IOException {
+
+        //канал для UI->logic
+        this.commandWriter = new PipedWriter();
+        this.commandReader = new PipedReader(this.commandWriter);
+
+        //канал 2 для ответов
+        this.responseWriter = new PipedWriter();
+        this.responseReader = new PipedReader(this.responseWriter);
+
+        this.consoleWriter = new ConsoleWriter(this.commandWriter);
+        System.out.println("Каналы созданы");
+        ResponseWriter respWriter = new ResponseWriter(this.responseWriter);
+        this.consoleReader = new ConsoleReader(this, this.commandReader, respWriter);
+
+        if (pendingUIListener != null) {
+            this.consoleReader.setUIListener(pendingUIListener);
+
+        }
+        consoleReader.start();
+        System.out.println("ConsoleReader запущен");
     }
 
     public void setN1TimeofLife(float timeofLife) {
@@ -97,7 +156,7 @@ public class Habitat {
         girlTimer += deltaTime;
 
         synchronized (objectsLock) {
-            generateObject();
+           generateObject();
         }
 
         removeDeadObjects();
@@ -114,13 +173,13 @@ public class Habitat {
                     float y = (float)Math.random() * (height-Student.SIZE);
                     int id = generateId();
                     objects.add(new BoyStudent(id, x, y, n1TimeOfLife, simulationTime, treeMapTimeNanos));
-                    System.out.println("Объект с " + id + " создан в " + simulationTime);
+//                    System.out.println("Объект с " + id + " создан в " + simulationTime);
 
                     synchronized (activeIdsLock) {
                         activeIds.add(id);
                     }
                     synchronized (birthToIdLock) {
-                        birthToId.put(treeMapTimeNanos, id);
+                        birthToId.put(id,treeMapTimeNanos);
                     }
                     boyCount++;
                 }
@@ -132,12 +191,12 @@ public class Habitat {
                     float y = (float)Math.random() * (height-Student.SIZE);
                     int id = generateId();
                     objects.add(new GirlStudent(id, x, y, n2TimeOfLife, simulationTime, treeMapTimeNanos));
-                    System.out.println("Объект с " + id + " создан в " + simulationTime);
+//                    System.out.println("Объект с " + id + " создан в " + simulationTime);
                     synchronized (activeIdsLock) {
                         activeIds.add(id);
                     }
                     synchronized (birthToIdLock) {
-                        birthToId.put(treeMapTimeNanos, id);
+                        birthToId.put(id, treeMapTimeNanos);
                     }
                     girlCount++;
                 }
@@ -152,7 +211,7 @@ public class Habitat {
                 IBehaviour obj = it.next();
                 if(simulationTime >= obj.getCreationTime() + obj.getLifeTime()) {
                     it.remove();
-                    System.out.println("Объект с " + obj.getId() + " удален в " + simulationTime);
+
 
                     synchronized (activeIdsLock) {
                         activeIds.remove(obj.getId());
@@ -178,16 +237,27 @@ public class Habitat {
         synchronized (objectsLock) {
             synchronized (activeIdsLock) {
                 synchronized (birthToIdLock) {
-                    objects.clear();
-                    activeIds.clear();
-                    birthToId.clear();
+                    if(fileProvider.isFileExist() && startWithFile == true ) {
 
-                    boyTimer = 0;
-                    girlTimer = 0;
-                    simulationTime = 0;
-                    treeMapTimeNanos = 0;
-                    boyCount = 0;
-                    girlCount = 0;
+                        boyTimer = 0;
+                        girlTimer = 0;
+                        simulationTime = 0;
+                        treeMapTimeNanos = 0;
+                        boyCount = (int) objects.stream().filter(o -> o instanceof BoyStudent).count();
+                        girlCount = (int) objects.stream().filter(o -> o instanceof GirlStudent).count();
+                    }
+                    else {
+                        objects.clear();
+                        activeIds.clear();
+                        birthToId.clear();
+                        boyTimer = 0;
+                        girlTimer = 0;
+                        simulationTime = 0;
+                        treeMapTimeNanos = 0;
+                        boyCount = 0;
+                        girlCount = 0;
+                    }
+
                 }
             }
         }
@@ -247,8 +317,8 @@ public class Habitat {
         }
     }
     //лаба3=======================================================================================
-    public TreeMap<Long,Integer> getBirthToId() {
-        synchronized (birthToIdLock) {return new TreeMap<Long,Integer>(birthToId);}
+    public TreeMap<Integer,Long> getBirthToId() {
+        synchronized (birthToIdLock) {return new TreeMap<Integer,Long>(birthToId);}
     }
     public Set<Integer> getActiveIds() {
         synchronized (activeIdsLock) {return new HashSet<>(activeIds);
@@ -297,20 +367,29 @@ public class Habitat {
     }
 
     public void boysAIpause() {
-        boysAI.pause();
-        System.out.println("AI парней на паузе");
+        if (boysAI != null) {
+            boysAI.pause();
+            System.out.println("AI парней на паузе");
+        }
+
     }
     public void boysAIresume() {
-        boysAI.resume();
+        if(boysAI != null) {
+            boysAI.resume();
+        }
 
     }
 
     public void girlsAIpause() {
-        girlsAI.pause();
-        System.out.println("AI девушек на паузе");
+        if(boysAI != null) {
+            girlsAI.pause();
+        }
+
     }
     public void girlsAIresume() {
-        girlsAI.resume();
+        if(boysAI != null) {
+            girlsAI.resume();
+        }
     }
 
     public void boysAIsetPriority(int priority) {
@@ -348,7 +427,105 @@ public class Habitat {
         }
     }
 
+    public ConsoleWriter getConsoleWriter() {
+        try {
+            if (consoleWriter == null) {
+                initConsole();
+            }
+            return consoleWriter;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
+    public PipedReader getResponseReader() {
+        try {
+            if (responseReader == null) {
+                initConsole();
+            }
+            return responseReader;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public void setUIListener(UICommandListener listener) {
+        this.pendingUIListener = listener;
+        if (consoleReader != null) {
+            consoleReader.setUIListener(listener);
+        }
+    }
+
+    private static class IBehaviourDeserializer implements JsonDeserializer<IBehaviour> {
+        @Override
+        public IBehaviour deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext ctx)
+                throws JsonParseException {
+            JsonObject obj = json.getAsJsonObject();
+            String type = obj.get("type").getAsString();
+            if ("boy".equals(type)) {
+                return ctx.deserialize(obj, BoyStudent.class);
+            } else {
+                return ctx.deserialize(obj, GirlStudent.class);
+            }
+        }
+    }
+
+    public String getSavedToJson(float timeOfCall) {
+        String json = null;
+        try {
+            List<IBehaviour> objCopy = objects;
+            for(IBehaviour obj : objCopy) {
+                obj.setTimeOfLife(obj.getLifeTime() - (timeOfCall-obj.getCreationTime()));
+                obj.setCreationTime(0);
+                obj.setCreationTimeNanos(0);
+
+            }
+            Set<Integer> activeIdsCopy = activeIds;
+            TreeMap<Integer,Long> birthToIdCopy = birthToId;
+            for(Map.Entry<Integer,Long> entry : birthToIdCopy.entrySet()) {
+                entry.setValue(0L);
+            }
+
+            Map<String, Object> allCollections = new HashMap<>();
+            allCollections.put("objects", objCopy);
+            allCollections.put("activeIds", activeIdsCopy);
+            allCollections.put("birthToId", birthToIdCopy);
+            json = gson.toJson(allCollections);
+        } catch (Exception e) {
+            System.err.println("Ошибка перевода в json" + e.getMessage());
+        }
+        return json;
+    }
+    public void setFromJson(JsonObject json) {
+        List<IBehaviour> obj = gson.fromJson(json.get("objects"), new TypeToken<List<IBehaviour>>(){}.getType());
+        for(IBehaviour o : obj) {
+            if(o instanceof Student s) {
+                s.initImage();
+            }
+        }
+
+        Set<Integer> ids = gson.fromJson(json.get("activeIds"), new TypeToken<Set<Integer>>(){}.getType());
+        TreeMap<Integer,Long> btoid = gson.fromJson(json.get("birthToId"), new TypeToken<TreeMap<Integer,Long> >(){}.getType());
+
+        synchronized (objectsLock) {
+            synchronized (activeIdsLock) {
+                synchronized (birthToIdLock) {
+                    this.objects = obj;
+                    this.activeIds = ids;
+                    this.birthToId = btoid;
+                }
+            }
+        }
+    }
+
+    public void startWithFile() {
+        this.startWithFile = true;
+    }
+    public void startWithoutFile() {
+        this.startWithFile = false;
+    }
 }
 
 

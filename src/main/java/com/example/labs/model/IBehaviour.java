@@ -9,4 +9,7 @@ public interface IBehaviour {
     long getCreationTimeNanos();
     float getLifeTime();
     int getId();
+    void setCreationTime(float time);
+    void setTimeOfLife(float time);
+    void setCreationTimeNanos(long time);
 }

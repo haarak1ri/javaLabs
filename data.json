@@ -1,0 +1,41 @@
+{
+  "birthToId": {
+    "60264": 0,
+    "152711": 0,
+    "204816": 0
+  },
+  "objects": [
+    {
+      "type": "boy",
+      "x": 271.5816,
+      "y": 603.68463,
+      "creationTime": 0.0,
+      "creationTimeNanos": 0,
+      "lifeTime": 7.0,
+      "id": 204816
+    },
+    {
+      "type": "girl",
+      "x": 151.62497,
+      "y": 709.73706,
+      "creationTime": 0.0,
+      "creationTimeNanos": 0,
+      "lifeTime": 7.0,
+      "id": 152711
+    },
+    {
+      "type": "boy",
+      "x": 124.30099,
+      "y": 87.52429,
+      "creationTime": 0.0,
+      "creationTimeNanos": 0,
+      "lifeTime": 7.0,
+      "id": 60264
+    }
+  ],
+  "activeIds": [
+    152711,
+    204816,
+    60264
+  ]
+}

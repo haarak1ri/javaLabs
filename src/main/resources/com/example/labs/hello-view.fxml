@@ -33,9 +33,14 @@
         <VBox>
             <MenuBar>
                 <Menu text="Файл">
+                    <MenuItem text="Сохранить" onAction="#handleSaveToFile"/>
+                    <MenuItem text="Загрузить" onAction="#handleLoadFromFile"/>
                 </Menu>
                 <Menu text="Вид">
                     <MenuItem text="Показать/скрыть время" onAction="#handleShowTimerButton"/>
+                </Menu>
+                <Menu text="Консоль">
+                    <MenuItem text="Показать консоль" onAction="#handleOpenConsole"/>
                 </Menu>
                 <Menu text="Справка">
                 </Menu>
@@ -254,7 +259,7 @@
                     <Label text="Приоритет парней:"
                            GridPane.rowIndex="0" GridPane.columnIndex="0"/>
                     <ComboBox fx:id="bpr"
-                              value="1"
+
                               prefWidth="100" GridPane.rowIndex="0" GridPane.columnIndex="1" >
                         <items>
                             <FXCollections fx:factory="observableArrayList">
@@ -267,7 +272,7 @@
                     <Label text="Приоритет девушек:"
                            GridPane.rowIndex="1" GridPane.columnIndex="0"/>
                     <ComboBox fx:id="gpr"
-                              value="1"
+
                               prefWidth="100" GridPane.rowIndex="1" GridPane.columnIndex="1" >
                         <items>
                             <FXCollections fx:factory="observableArrayList">

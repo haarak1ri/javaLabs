@@ -1,7 +1,10 @@
 package com.example.labs;
 
-import com.example.labs.core.Habitat;
-import com.example.labs.core.TimerService;
+import com.example.labs.core.*;
+import com.example.labs.model.ConsoleDialog;
+import com.example.labs.model.IBehaviour;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.event.ActionEvent;
@@ -14,11 +17,17 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
+import java.io.File;
+import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class HelloController  {
+public class HelloController implements UICommandListener, FileProvider {
     //лаба 1
     @FXML
     private BorderPane root;
@@ -71,23 +80,26 @@ public class HelloController  {
     @FXML private Label girlssMoveLabel;
     @FXML private ComboBox<Integer> bpr;
     @FXML private ComboBox<Integer> gpr;
-
+    private File currentFile;
 
     private GraphicsContext gc;
 
     private Habitat habitat;
     private TimerService timerService;
-
+    private ConsoleWriter consoleWriter;
+    private ConsoleDialog consoleDialog;
 
     private BooleanProperty simulationRunning = new SimpleBooleanProperty(false);
     private BooleanProperty boysAIRunning = new SimpleBooleanProperty(true); //устанавливаем здесь чтобы не выносить в отдельный метод
     private BooleanProperty girlsAIRunning = new SimpleBooleanProperty(true);
+    private AppConfig config;
+    private Stage stage;
 
     @FXML
     public void initialize() {
         root.addEventFilter(KeyEvent.KEY_PRESSED, this::handleKeyPress);
         this.gc = gameCanvas.getGraphicsContext2D();
-        setupDefaultValues();
+
         bindAllStates(); // доступности кнопок, видимости таймеров
         setupAllValidations(); //валидации ввода вывода
 
@@ -117,16 +129,7 @@ public class HelloController  {
         setupLifeTimeValidation();
     }
     //сетап значений по умолчанию
-    private void setupDefaultValues() {
-        n1Field.setText("1.0");
-        n2Field.setText("1.5");
-        p1Combo.setValue("70%");
-        p2Combo.setValue("50%");
-        n1TimeOfLifeField.setText("5.0");
-        n2TimeOfLifeField.setText("7.0");
-        bpr.setValue(5);
-        gpr.setValue(5);
-    }
+
     //реализация доступной и видимостей кнопок
     private void bindAIButtonsState() {
 
@@ -134,6 +137,7 @@ public class HelloController  {
         boysAIstop.disableProperty().bind(boysAIRunning.not().or(simulationRunning.not()));
         girlsAIstart.disableProperty().bind(girlsAIRunning.or(simulationRunning.not()));
         girlsAIstop.disableProperty().bind(girlsAIRunning.not().or(simulationRunning.not()));
+
     }
     private void bindStartStopButtonsState() {
         startButton.disableProperty().bind(simulationRunning);
@@ -142,7 +146,7 @@ public class HelloController  {
         stopButtonPanel.disableProperty().bind(simulationRunning.not());
     }
     private void bindCurrentObjButtonState() {
-        currentObjects.disableProperty().bind(simulationRunning.not());
+        //currentObjects.disableProperty().bind(simulationRunning.not());
 
     }
     private void bindParamsState() {
@@ -162,6 +166,7 @@ public class HelloController  {
     private void startStopSimulationSetup() {
         simulationRunning.addListener((obs, oldVal, newVal) -> {
             if (newVal ) {
+
                 startSimulation();
             }
             else if (!newVal) {
@@ -208,6 +213,8 @@ public class HelloController  {
     //работа с dependecy inj
     public void setHabitat(Habitat habitat) {
         this.habitat = habitat;
+        habitat.setUIListener(this);
+        habitat.setFileProvider(this);
     }
     public void setTimer(TimerService timerService) {
         this.timerService = timerService;
@@ -215,6 +222,56 @@ public class HelloController  {
             updateTimerDisplay();
          });
     }
+
+
+    public void setConsoleWriter(ConsoleWriter consoleWriter) {
+        this.consoleWriter = consoleWriter;
+    }
+    public void setConfig(AppConfig config) {
+        this.config = config;
+
+        n1Field.setText(String.valueOf(config.getN1()));
+        n2Field.setText(String.valueOf(config.getN2()));
+        p1Combo.setValue(String.valueOf(config.getP1()*100)+"%");
+        p2Combo.setValue(String.valueOf(config.getP2()*100)+"%");
+        n1TimeOfLifeField.setText(String.valueOf(config.getN1TimeOfLife()));
+        n2TimeOfLifeField.setText(String.valueOf(config.getN2TimeOfLife()));
+
+        bpr.setValue(config.getBoyPriority());
+        gpr.setValue(config.getGirlPriority());
+
+        boysAIRunning.set(config.isBoysMoving());
+        girlsAIRunning.set(config.isGirlsMoving());
+        if(config.isTimerVisible()) {
+
+            showTimeRadio.setSelected(true);
+        } else {
+            hideTimeRadio.setSelected(true);
+        }
+        ShowInfoCheckBox.setSelected(config.isShowInfoOnStop());
+    }
+
+    public void updateConfigFromUI() {
+        config.setN1(Float.parseFloat(n1Field.getText()));
+        config.setN2(Float.parseFloat(n2Field.getText()));
+        String value1 = p1Combo.getValue().replace("%", "");
+        float num1 = Float.parseFloat(value1);
+        config.setP1(num1/100);
+
+        String value2 = p2Combo.getValue().replace("%", "");
+        float num2 = Float.parseFloat(value2);
+        config.setP2(num2/100);
+
+        config.setN1TimeOfLife(Float.parseFloat(n1TimeOfLifeField.getText()));
+        config.setN2TimeOfLife(Float.parseFloat(n2TimeOfLifeField.getText()));
+        config.setBoyPriority(bpr.getValue());
+        config.setGirlPriority(gpr.getValue());
+        config.setTimerVisible(showTimeRadio.isSelected());
+        config.setShowInfoOnStop(ShowInfoCheckBox.isSelected());
+        config.setBoysMoving(boysAIRunning.getValue());
+        config.setGirlsMoving(girlsAIRunning.getValue());
+    }
+
 
     private void updateTimerDisplay() {
         if (timerLabel != null && habitat != null) {
@@ -248,13 +305,23 @@ public class HelloController  {
     private void toggleTimer() {
         if (showTimeRadio.isSelected()) {
             hideTimeRadio.setSelected(true);
+
         } else {
             showTimeRadio.setSelected(true);
+
         }
     }
-
+    @Override
+    public boolean isTimerVisible() {
+        return showTimeRadio.isSelected();
+    }
+    @Override
+    public String getTimerState() {
+        return showTimeRadio.isSelected() ? "show" : "hide";
+    }
     private void startSimulation() {
         if(!timerService.isRunning()) {
+
             float n1 = Float.parseFloat(n1Field.getText());
             float n2 = Float.parseFloat(n2Field.getText());
             double p1 = getProbabilityFromCombo(p1Combo);
@@ -268,8 +335,13 @@ public class HelloController  {
             habitat.reset();
             habitat.startAI();
             timerService.start();
+            if (!boysAIRunning.get()) habitat.boysAIpause();
+            if (!girlsAIRunning.get()) habitat.girlsAIpause();
         }
         System.out.println("Созданы два потока с приоритетмами Boy: " + habitat.getBoysPriority() + " Girl " + habitat.getGirlsPriority());
+    }
+    public boolean isFileNull() {
+        return (currentFile == null);
     }
 
     private void stopSimulation() {
@@ -281,6 +353,7 @@ public class HelloController  {
             } else {
                 habitat.stopAI();
                 timerService.stop();
+                habitat.startWithoutFile();
                 habitat.reset();
                 clearCanvas();
                 timerLabel.setText("Время: 0.0 сек");
@@ -499,11 +572,13 @@ public class HelloController  {
         System.out.println("Размер birthToId: " + habitat.getBirthToId().size());
         System.out.println("Размер activeIds: " + habitat.getActiveIds().size());
 
-        for(Map.Entry<Long,Integer> entry : habitat.getBirthToId().entrySet()) {
-            long creationTime = entry.getKey();
+        for(Map.Entry<Integer, Long> entry : habitat.getBirthToId().entrySet()) {
+            int id = entry.getKey();
+            long creationTime = entry.getValue();
+
             float realTime = creationTime / 1e9f;
             String s = String.format("%.2f", realTime);
-            int id = entry.getValue();
+
             if(habitat.getActiveIds().contains(id)) {
                 grid.add(new Label(s), 0, row);
                 grid.add(new Label("id " + id), 1, row);
@@ -551,5 +626,80 @@ public class HelloController  {
     }
     public void handleGirlsAIStopButton(ActionEvent actionEvent) {
         girlsAIRunning.set(false);
+    }
+
+    @Override
+    public void onToggleTimer() {
+        toggleTimer();
+    }
+
+    public void handleOpenConsole(ActionEvent actionEvent) {
+        if (consoleDialog == null) {
+            consoleDialog = new ConsoleDialog(
+                    consoleWriter,
+                    habitat.getResponseReader()
+            );
+        }
+        consoleDialog.show();
+    }
+
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
+    public void handleSaveToFile(ActionEvent actionEvent) {
+
+        float timeOfCall = habitat.getSimulationTime();
+        if(currentFile == null) {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Сохранить файл");
+            fileChooser.getExtensionFilters().addAll(
+                    new FileChooser.ExtensionFilter("JSON файлы", "*.json")
+            );
+            fileChooser.setInitialFileName("data.json");
+            File file = fileChooser.showSaveDialog(stage);
+            if(file != null) {
+                if(!file.getName().endsWith(".json")) {
+                    file = new File(file.getPath() + ".json");
+                }
+                currentFile = file;
+            } else {
+                return;
+            }
+            try {
+                Files.writeString(currentFile.toPath(),habitat.getSavedToJson(timeOfCall));
+            } catch (Exception e) {
+                System.err.println("Ошибка сохранения: " + e.getMessage());
+            }
+
+        }
+    }
+
+    public void handleLoadFromFile(ActionEvent actionEvent) {
+        if(simulationRunning.get() == true) {
+            simulationRunning.set(false);
+        }
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Загрузить файл");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("JSON файлы", "*.json")
+        );
+        File file = fileChooser.showOpenDialog(stage);
+        if(file != null) {
+            try {
+                String content = Files.readString(file.toPath());
+                JsonObject jsonObject = JsonParser.parseString(content).getAsJsonObject();
+                habitat.setFromJson(jsonObject);
+                currentFile = file;
+                habitat.startWithFile();
+            } catch (Exception e) {
+                System.err.println("Ошибка сохранения: " + e.getMessage());
+            }
+        }
+    }
+
+    @Override
+    public boolean isFileExist() {
+        return currentFile != null;
     }
 }
