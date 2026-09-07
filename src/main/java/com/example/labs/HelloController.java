@@ -1,8 +1,10 @@
 package com.example.labs;
 
 import com.example.labs.core.*;
+import com.example.labs.db.Database;
 import com.example.labs.model.ConsoleDialog;
 import com.example.labs.model.IBehaviour;
+import com.example.labs.tcp.ServerCommandHandler;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import javafx.beans.property.BooleanProperty;
@@ -21,8 +23,12 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,7 +47,7 @@ public class HelloController implements UICommandListener, FileProvider {
     @FXML
     private Button showTimerButton;
     @FXML
-    private Label timerLabel;
+    public Label timerLabel;
     @FXML
     private Label boyCountLabel;
     @FXML
@@ -52,34 +58,55 @@ public class HelloController implements UICommandListener, FileProvider {
     private Label totalSimulationTime;
     //лаба 2 новый интерфейс
     //панель управления
-    @FXML private Button startButtonPanel;
-    @FXML private Button stopButtonPanel;
+    @FXML
+    private Button startButtonPanel;
+    @FXML
+    private Button stopButtonPanel;
     // Radio buttons для времени
-    @FXML private RadioButton showTimeRadio;
-    @FXML private RadioButton hideTimeRadio;
-    @FXML private ToggleGroup timeToggleGroup;
+    @FXML
+    private RadioButton showTimeRadio;
+    @FXML
+    private RadioButton hideTimeRadio;
+    @FXML
+    private ToggleGroup timeToggleGroup;
     // CheckBox
-    @FXML private CheckBox ShowInfoCheckBox;
+    @FXML
+    private CheckBox ShowInfoCheckBox;
     // Текстовые поля
-    @FXML private TextField n1Field;
-    @FXML private TextField n2Field;
+    @FXML
+    private TextField n1Field;
+    @FXML
+    private TextField n2Field;
     // ComboBox для вероятностей
-    @FXML private ComboBox<String> p1Combo;
-    @FXML private ComboBox<String> p2Combo;
+    @FXML
+    private ComboBox<String> p1Combo;
+    @FXML
+    private ComboBox<String> p2Combo;
 
     //лаба 3
-    @FXML private TextField n1TimeOfLifeField;
-    @FXML private TextField n2TimeOfLifeField;
-    @FXML private Button currentObjects;
+    @FXML
+    private TextField n1TimeOfLifeField;
+    @FXML
+    private TextField n2TimeOfLifeField;
+    @FXML
+    private Button currentObjects;
     //лаба 4
-    @FXML private Button boysAIstart;
-    @FXML private Button boysAIstop;
-    @FXML private Button girlsAIstart;
-    @FXML private Button girlsAIstop;
-    @FXML private Label boysMoveLabel;
-    @FXML private Label girlssMoveLabel;
-    @FXML private ComboBox<Integer> bpr;
-    @FXML private ComboBox<Integer> gpr;
+    @FXML
+    private Button boysAIstart;
+    @FXML
+    private Button boysAIstop;
+    @FXML
+    private Button girlsAIstart;
+    @FXML
+    private Button girlsAIstop;
+    @FXML
+    private Label boysMoveLabel;
+    @FXML
+    private Label girlssMoveLabel;
+    @FXML
+    private ComboBox<Integer> bpr;
+    @FXML
+    private ComboBox<Integer> gpr;
     private File currentFile;
 
     private GraphicsContext gc;
@@ -89,11 +116,24 @@ public class HelloController implements UICommandListener, FileProvider {
     private ConsoleWriter consoleWriter;
     private ConsoleDialog consoleDialog;
 
-    private BooleanProperty simulationRunning = new SimpleBooleanProperty(false);
+    public BooleanProperty simulationRunning = new SimpleBooleanProperty(false);
     private BooleanProperty boysAIRunning = new SimpleBooleanProperty(true); //устанавливаем здесь чтобы не выносить в отдельный метод
     private BooleanProperty girlsAIRunning = new SimpleBooleanProperty(true);
     private AppConfig config;
     private Stage stage;
+
+
+    //6я лаба
+    private ServerCommandHandler serverCommandHander;
+    @FXML
+    private ListView clientsListView;
+    @FXML
+    private CheckBox syncWithSelectedCheckBox;
+    @FXML
+    private Label syncStatusLabel;
+    @FXML
+    private Label clientName;
+    private Database db;
 
     @FXML
     public void initialize() {
@@ -122,7 +162,10 @@ public class HelloController implements UICommandListener, FileProvider {
         bindCurrentObjButtonState();
         bindParamsState();
         bindTimerLabelState();
+
+
     }
+
     private void setupAllValidations() {
         setupN1N2Validation();
         setupPriorityValidation();
@@ -139,46 +182,67 @@ public class HelloController implements UICommandListener, FileProvider {
         girlsAIstop.disableProperty().bind(girlsAIRunning.not().or(simulationRunning.not()));
 
     }
+
     private void bindStartStopButtonsState() {
         startButton.disableProperty().bind(simulationRunning);
         stopButton.disableProperty().bind(simulationRunning.not());
         startButtonPanel.disableProperty().bind(simulationRunning);
         stopButtonPanel.disableProperty().bind(simulationRunning.not());
     }
+
     private void bindCurrentObjButtonState() {
         //currentObjects.disableProperty().bind(simulationRunning.not());
 
     }
+
     private void bindParamsState() {
-        n1Field.disableProperty().bind(simulationRunning);
-        n2Field.disableProperty().bind(simulationRunning);
-        n1TimeOfLifeField.disableProperty().bind(simulationRunning);
-        n2TimeOfLifeField.disableProperty().bind(simulationRunning);
-        p1Combo.disableProperty().bind(simulationRunning);
-        p2Combo.disableProperty().bind(simulationRunning);
+//        n1Field.disableProperty().bind(simulationRunning);
+//        n2Field.disableProperty().bind(simulationRunning);
+//        n1TimeOfLifeField.disableProperty().bind(simulationRunning);
+//        n2TimeOfLifeField.disableProperty().bind(simulationRunning);
+//        p1Combo.disableProperty().bind(simulationRunning);
+//        p2Combo.disableProperty().bind(simulationRunning);
         bpr.disableProperty().bind(simulationRunning);
         gpr.disableProperty().bind(simulationRunning);
     }
+
     private void bindTimerLabelState() {
         timerLabel.visibleProperty().bind(timeToggleGroup.selectedToggleProperty().isEqualTo(showTimeRadio));
     }
 
     private void startStopSimulationSetup() {
         simulationRunning.addListener((obs, oldVal, newVal) -> {
-            if (newVal ) {
-
+            if (newVal) {
                 startSimulation();
-            }
-            else if (!newVal) {
+                if (syncWithSelectedCheckBox.isSelected()) {
+                    Object selectedItem = clientsListView.getSelectionModel().getSelectedItem();
+                    if (selectedItem != null) {
+                        String client = selectedItem.toString();
+                        if (!client.isEmpty()) {
+                            serverCommandHander.sendToServer("START_SYNC:" + client);
+                        }
+                    }
+                }
+            } else if (!newVal) {
                 stopSimulation();
+                if (syncWithSelectedCheckBox.isSelected()) {
+                    Object selectedItem = clientsListView.getSelectionModel().getSelectedItem();
+                    if (selectedItem != null) {
+                        String client = selectedItem.toString();
+                        if (!client.isEmpty()) {
+                            serverCommandHander.sendToServer("STOP_SYNC:" + client);
+                        }
+                    }
+                }
             }
 
         });
     }
+
     private void threadsSetup() {
-        boysAIRunning.addListener((obs,oldVal, newVal)-> {
-            if(habitat != null) {
-                if(newVal) {
+        boysAIRunning.addListener((obs, oldVal, newVal) -> {
+            if (habitat != null) {
+                if (newVal) {
                     habitat.boysAIresume();
                 } else {
                     habitat.boysAIpause();
@@ -187,9 +251,9 @@ public class HelloController implements UICommandListener, FileProvider {
 
         });
 
-        girlsAIRunning.addListener((obs,oldVal, newVal)-> {
-            if(habitat != null) {
-                if(newVal) {
+        girlsAIRunning.addListener((obs, oldVal, newVal) -> {
+            if (habitat != null) {
+                if (newVal) {
                     habitat.girlsAIresume();
                 } else {
                     habitat.girlsAIpause();
@@ -197,9 +261,10 @@ public class HelloController implements UICommandListener, FileProvider {
             }
         });
     }
+
     private void setupPriorityValidation() {
-        bpr.valueProperty().addListener((obs,oldVal,newVal) -> {
-            if(newVal == null){
+        bpr.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal == null) {
                 bpr.setValue(5);
             }
         });
@@ -216,24 +281,35 @@ public class HelloController implements UICommandListener, FileProvider {
         habitat.setUIListener(this);
         habitat.setFileProvider(this);
     }
+
     public void setTimer(TimerService timerService) {
         this.timerService = timerService;
-        timerService.setOnUpdate(() -> {refreshDisplay();
+        timerService.setOnUpdate(() -> {
+            refreshDisplay();
             updateTimerDisplay();
-         });
+        });
     }
 
+    public void setSeverCommandHandler(ServerCommandHandler s) {
+        this.serverCommandHander = s;
+        setClientNameUI();
+    }
 
     public void setConsoleWriter(ConsoleWriter consoleWriter) {
         this.consoleWriter = consoleWriter;
     }
+    public void setDatabase(Database db ) {
+        this.db = db;
+    }
+
+
     public void setConfig(AppConfig config) {
         this.config = config;
 
         n1Field.setText(String.valueOf(config.getN1()));
         n2Field.setText(String.valueOf(config.getN2()));
-        p1Combo.setValue(String.valueOf(config.getP1()*100)+"%");
-        p2Combo.setValue(String.valueOf(config.getP2()*100)+"%");
+        p1Combo.setValue(String.valueOf(config.getP1() * 100) + "%");
+        p2Combo.setValue(String.valueOf(config.getP2() * 100) + "%");
         n1TimeOfLifeField.setText(String.valueOf(config.getN1TimeOfLife()));
         n2TimeOfLifeField.setText(String.valueOf(config.getN2TimeOfLife()));
 
@@ -242,7 +318,7 @@ public class HelloController implements UICommandListener, FileProvider {
 
         boysAIRunning.set(config.isBoysMoving());
         girlsAIRunning.set(config.isGirlsMoving());
-        if(config.isTimerVisible()) {
+        if (config.isTimerVisible()) {
 
             showTimeRadio.setSelected(true);
         } else {
@@ -256,11 +332,11 @@ public class HelloController implements UICommandListener, FileProvider {
         config.setN2(Float.parseFloat(n2Field.getText()));
         String value1 = p1Combo.getValue().replace("%", "");
         float num1 = Float.parseFloat(value1);
-        config.setP1(num1/100);
+        config.setP1(num1 / 100);
 
         String value2 = p2Combo.getValue().replace("%", "");
         float num2 = Float.parseFloat(value2);
-        config.setP2(num2/100);
+        config.setP2(num2 / 100);
 
         config.setN1TimeOfLife(Float.parseFloat(n1TimeOfLifeField.getText()));
         config.setN2TimeOfLife(Float.parseFloat(n2TimeOfLifeField.getText()));
@@ -277,9 +353,11 @@ public class HelloController implements UICommandListener, FileProvider {
         if (timerLabel != null && habitat != null) {
 
             float time = habitat.getSimulationTime();
+
             timerLabel.setText(String.format("Время: %.1f сек", time));
         }
     }
+
     private void handleKeyPress(KeyEvent event) {
         KeyCode code = event.getCode();
         // Обрабатываем только нужные клавиши
@@ -289,6 +367,7 @@ public class HelloController implements UICommandListener, FileProvider {
         }
 
     }
+
     private void executeActionForKey(KeyCode code) {
         switch (code) {
             case B:
@@ -302,6 +381,7 @@ public class HelloController implements UICommandListener, FileProvider {
                 break;
         }
     }
+
     private void toggleTimer() {
         if (showTimeRadio.isSelected()) {
             hideTimeRadio.setSelected(true);
@@ -311,16 +391,19 @@ public class HelloController implements UICommandListener, FileProvider {
 
         }
     }
+
     @Override
     public boolean isTimerVisible() {
         return showTimeRadio.isSelected();
     }
+
     @Override
     public String getTimerState() {
         return showTimeRadio.isSelected() ? "show" : "hide";
     }
+
     private void startSimulation() {
-        if(!timerService.isRunning()) {
+        if (!timerService.isRunning()) {
 
             float n1 = Float.parseFloat(n1Field.getText());
             float n2 = Float.parseFloat(n2Field.getText());
@@ -331,7 +414,7 @@ public class HelloController implements UICommandListener, FileProvider {
 
             float nt1 = Float.parseFloat(n1TimeOfLifeField.getText());
             float nt2 = Float.parseFloat(n2TimeOfLifeField.getText());
-            habitat.setParams(n1, n2, p1, p2, nt1, nt2, boysPriority,girlsPriority);
+            habitat.setParams(n1, n2, p1, p2, nt1, nt2, boysPriority, girlsPriority);
             habitat.reset();
             habitat.startAI();
             timerService.start();
@@ -340,39 +423,45 @@ public class HelloController implements UICommandListener, FileProvider {
         }
         System.out.println("Созданы два потока с приоритетмами Boy: " + habitat.getBoysPriority() + " Girl " + habitat.getGirlsPriority());
     }
+
     public boolean isFileNull() {
         return (currentFile == null);
     }
 
     private void stopSimulation() {
 
-        if(timerService.isRunning()) {
+        if (timerService.isRunning()) {
             timerService.pause();
-            if(ShowInfoCheckBox.isSelected()) {
+            if (ShowInfoCheckBox.isSelected()) {
                 showModalDialog();
             } else {
                 habitat.stopAI();
                 timerService.stop();
                 habitat.startWithoutFile();
+                habitat.startWithoutDB();
                 habitat.reset();
-                clearCanvas();
                 timerLabel.setText("Время: 0.0 сек");
+                clearCanvas();
             }
         }
+//        updateTimerDisplay();
+
 
     }
-
 
 
     public void handleStartButton(ActionEvent actionEvent) {
         simulationRunning.set(true);
     }
+
     public void handleStopButton(ActionEvent actionEvent) {
         simulationRunning.set(false);
     }
+
     public void handleShowTimerButton(ActionEvent actionEvent) {
         toggleTimer();
     }
+
     public void refreshDisplay() {
         if (habitat != null && gc != null) {
             clearCanvas();
@@ -381,55 +470,48 @@ public class HelloController implements UICommandListener, FileProvider {
     }
 
 
-
-//лаба 2============================================================================================================v
+    //лаба 2============================================================================================================v
     public void handleStartButtonPanel(ActionEvent actionEvent) {
-        simulationRunning.set(true);;
-}
+        simulationRunning.set(true);
+        ;
+    }
+
     public void handleStopButtonPanel(ActionEvent actionEvent) {
         simulationRunning.set(false);
     }
+
     private void setupN1N2Validation() {
         n1Field.textProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal.matches("\\d*\\.?\\d*")) {
                 n1Field.setText(oldVal);
-            }
-
-            else if (newVal.startsWith("-")) {
+            } else if (newVal.startsWith("-")) {
+                n1Field.setText(oldVal);
+            } else if (newVal.startsWith(".")) {
+                n1Field.setText(oldVal);
+            } else if (!newVal.isEmpty() && !newVal.equals(".") && Float.parseFloat(newVal) < 1) {
+                n1Field.setText(oldVal);
+            } else if (!newVal.isEmpty() && newVal.length() > 1 && newVal.startsWith("0") && !newVal.startsWith("0.")) {
                 n1Field.setText(oldVal);
             }
-            else if (newVal.startsWith(".")) {
-                n1Field.setText(oldVal);
-            }
-
-            else if (!newVal.isEmpty() && !newVal.equals(".") && Float.parseFloat(newVal) < 1) {
-                n1Field.setText(oldVal);
-            }
-            else if (!newVal.isEmpty() && newVal.length() > 1 && newVal.startsWith("0") && !newVal.startsWith("0.")) {
-                n1Field.setText(oldVal);
-            }
+            habitat.updateN1Params(Float.parseFloat(n1Field.getText()));
         });
 
         n2Field.textProperty().addListener((obs, oldVal, newVal) -> {
 
             if (!newVal.matches("\\d*\\.?\\d*")) {
                 n2Field.setText(oldVal);
-            }
-
-            else if (newVal.startsWith("-")) {
+            } else if (newVal.startsWith("-")) {
+                n2Field.setText(oldVal);
+            } else if (newVal.startsWith(".")) {
+                n2Field.setText(oldVal);
+            } else if (!newVal.isEmpty() && !newVal.equals(".") && Float.parseFloat(newVal) < 1) {
+                n2Field.setText(oldVal);
+            } else if (!newVal.isEmpty() && newVal.length() > 1 && newVal.startsWith("0") && !newVal.startsWith("0.")) {
                 n2Field.setText(oldVal);
             }
-            else if (newVal.startsWith(".")) {
-                n2Field.setText(oldVal);
-            }
-
-            else if (!newVal.isEmpty() && !newVal.equals(".") && Float.parseFloat(newVal) < 1) {
-                n2Field.setText(oldVal);
-            }
-            else if (!newVal.isEmpty() && newVal.length() > 1 && newVal.startsWith("0") && !newVal.startsWith("0.")) {
-                n2Field.setText(oldVal);
-            }
+            habitat.updateN2Params(Float.parseFloat(n2Field.getText()));
         });
+
     }
 
 
@@ -458,17 +540,17 @@ public class HelloController implements UICommandListener, FileProvider {
 
         textArea.setText(
                 "Мальчики: " + habitat.getBoyCount() + "\n" +
-                "Девочки: " + habitat.getGirlCount() + "\n" +
-                "Всего: " + habitat.getTotalCount() + "\n" +
-                "Время симуляции: " + String.format("%.1f", habitat.getSimulationTime()) + " сек"
+                        "Девочки: " + habitat.getGirlCount() + "\n" +
+                        "Всего: " + habitat.getTotalCount() + "\n" +
+                        "Время симуляции: " + String.format("%.1f", habitat.getSimulationTime()) + " сек"
         );
 
         dialog.getDialogPane().setContent(textArea);
 
-        ButtonType okButton = new ButtonType("Ок",ButtonBar.ButtonData.OK_DONE);
-        ButtonType cancelButton = new ButtonType("Отмена",ButtonBar.ButtonData.CANCEL_CLOSE);
+        ButtonType okButton = new ButtonType("Ок", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelButton = new ButtonType("Отмена", ButtonBar.ButtonData.CANCEL_CLOSE);
 
-        dialog.getDialogPane().getButtonTypes().setAll(okButton,cancelButton);
+        dialog.getDialogPane().getButtonTypes().setAll(okButton, cancelButton);
 
         dialog.setResultConverter(button -> {
             if (button == okButton) {
@@ -481,14 +563,15 @@ public class HelloController implements UICommandListener, FileProvider {
         });
 
         Optional<Boolean> result = dialog.showAndWait();
-        if(result.isPresent() && result.get()) {
+        if (result.isPresent() && result.get()) {
             habitat.stopAI();
             timerService.stop();
+            habitat.startWithoutFile();
+            habitat.startWithoutDB();
             habitat.reset();
             clearCanvas();
             timerLabel.setText("Время: 0.0 сек");
-        }
-        else {
+        } else {
             timerService.start();
             simulationRunning.set(true);
 
@@ -501,46 +584,42 @@ public class HelloController implements UICommandListener, FileProvider {
         n1TimeOfLifeField.textProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal.matches("\\d*\\.?\\d*")) {
                 n1TimeOfLifeField.setText(oldVal);
+            } else if (newVal.startsWith("-")) {
+                n1TimeOfLifeField.setText(oldVal);
+            } else if (newVal.startsWith(".")) {
+                n1TimeOfLifeField.setText(oldVal);
+            } else if (!newVal.isEmpty() && !newVal.equals(".") && Float.parseFloat(newVal) < 1) {
+                n1TimeOfLifeField.setText(oldVal);
+            } else if (!newVal.isEmpty() && newVal.length() > 1 && newVal.startsWith("0") && !newVal.startsWith("0.")) {
+                n1TimeOfLifeField.setText(oldVal);
             }
+            habitat.updateTimesOfLifeN1Params(Float.parseFloat(n1TimeOfLifeField.getText()));
 
-            else if (newVal.startsWith("-")) {
-                n1TimeOfLifeField.setText(oldVal);
-            }
-            else if (newVal.startsWith(".")) {
-                n1TimeOfLifeField.setText(oldVal);
-            }
-
-            else if (!newVal.isEmpty() && !newVal.equals(".") && Float.parseFloat(newVal) < 1) {
-                n1TimeOfLifeField.setText(oldVal);
-            }
-            else if (!newVal.isEmpty() && newVal.length() > 1 && newVal.startsWith("0") && !newVal.startsWith("0.")) {
-                n1TimeOfLifeField.setText(oldVal);
-            }
         });
 
         n2TimeOfLifeField.textProperty().addListener((obs, oldVal, newVal) -> {
 
             if (!newVal.matches("\\d*\\.?\\d*")) {
                 n2TimeOfLifeField.setText(oldVal);
-            }
-
-            else if (newVal.startsWith("-")) {
+            } else if (newVal.startsWith("-")) {
+                n2TimeOfLifeField.setText(oldVal);
+            } else if (newVal.startsWith(".")) {
+                n2TimeOfLifeField.setText(oldVal);
+            } else if (!newVal.isEmpty() && !newVal.equals(".") && Float.parseFloat(newVal) < 1) {
+                n2TimeOfLifeField.setText(oldVal);
+            } else if (!newVal.isEmpty() && newVal.length() > 1 && newVal.startsWith("0") && !newVal.startsWith("0.")) {
                 n2TimeOfLifeField.setText(oldVal);
             }
-            else if (newVal.startsWith(".")) {
-                n2TimeOfLifeField.setText(oldVal);
-            }
-            else if (!newVal.isEmpty() && !newVal.equals(".") && Float.parseFloat(newVal) < 1) {
-                n2TimeOfLifeField.setText(oldVal);
-            }
-            else if (!newVal.isEmpty() && newVal.length() > 1 && newVal.startsWith("0") && !newVal.startsWith("0.")) {
-                n2TimeOfLifeField.setText(oldVal);
-            }
+            habitat.updateTimesOfLifeN2Params(Float.parseFloat(n2TimeOfLifeField.getText()));
         });
     }
+
+
+
     public void handleGetCurrentObjectsButton(ActionEvent actionEvent) {
-       getCurrentObjects();
+        getCurrentObjects();
     }
+
     private void getCurrentObjects() {
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("Информация о симуляции");
@@ -562,8 +641,8 @@ public class HelloController implements UICommandListener, FileProvider {
         Separator separator = new Separator();
         separator.setMaxWidth(Double.MAX_VALUE);
 
-        grid.add(timeHeader,0,0); // столб / строка
-        grid.add(idHeader,1,0);
+        grid.add(timeHeader, 0, 0); // столб / строка
+        grid.add(idHeader, 1, 0);
         grid.add(separator, 0, 1, 2, 1);
         int row = 2;
         boolean hasLivingObjects = false;
@@ -572,14 +651,14 @@ public class HelloController implements UICommandListener, FileProvider {
         System.out.println("Размер birthToId: " + habitat.getBirthToId().size());
         System.out.println("Размер activeIds: " + habitat.getActiveIds().size());
 
-        for(Map.Entry<Integer, Long> entry : habitat.getBirthToId().entrySet()) {
+        for (Map.Entry<Integer, Long> entry : habitat.getBirthToId().entrySet()) {
             int id = entry.getKey();
             long creationTime = entry.getValue();
 
             float realTime = creationTime / 1e9f;
             String s = String.format("%.2f", realTime);
 
-            if(habitat.getActiveIds().contains(id)) {
+            if (habitat.getActiveIds().contains(id)) {
                 grid.add(new Label(s), 0, row);
                 grid.add(new Label("id " + id), 1, row);
                 row++;
@@ -615,15 +694,19 @@ public class HelloController implements UICommandListener, FileProvider {
         });
         dialog.showAndWait();
     }
+
     public void handleBoysAIStartButton(ActionEvent actionEvent) {
         boysAIRunning.set(true);
     }
+
     public void handleBoysAIStopButton(ActionEvent actionEvent) {
         boysAIRunning.set(false);
     }
+
     public void handleGirlsAIStartButton(ActionEvent actionEvent) {
         girlsAIRunning.set(true);
     }
+
     public void handleGirlsAIStopButton(ActionEvent actionEvent) {
         girlsAIRunning.set(false);
     }
@@ -649,57 +732,141 @@ public class HelloController implements UICommandListener, FileProvider {
 
     public void handleSaveToFile(ActionEvent actionEvent) {
 
-        float timeOfCall = habitat.getSimulationTime();
-        if(currentFile == null) {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Сохранить файл");
-            fileChooser.getExtensionFilters().addAll(
-                    new FileChooser.ExtensionFilter("JSON файлы", "*.json")
-            );
-            fileChooser.setInitialFileName("data.json");
-            File file = fileChooser.showSaveDialog(stage);
-            if(file != null) {
-                if(!file.getName().endsWith(".json")) {
-                    file = new File(file.getPath() + ".json");
-                }
-                currentFile = file;
-            } else {
-                return;
-            }
-            try {
-                Files.writeString(currentFile.toPath(),habitat.getSavedToJson(timeOfCall));
-            } catch (Exception e) {
-                System.err.println("Ошибка сохранения: " + e.getMessage());
-            }
+        float timeOfCall = 0;
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Сохранить файл");
+//            fileChooser.getExtensionFilters().addAll(
+//                    new FileChooser.ExtensionFilter("JSON файлы", "*.json"),
+//                    new FileChooser.ExtensionFilter("SER файлы", "*.ser")
+//            );
+        fileChooser.setInitialFileName("data.");
+        File file = fileChooser.showSaveDialog(stage);
 
+        if (file != null) {
+            if (file.getName().endsWith(".ser")) {
+                try {
+                    habitat.saveObjects(file.getAbsolutePath());
+                    currentFile = file;
+
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            } else if (file.getName().endsWith(".json")) {
+                try {
+                    timeOfCall = habitat.getSimulationTime();
+                    String json = habitat.getSavedToJson(timeOfCall);
+                    Files.writeString(file.toPath(), json);
+                    currentFile = file;
+
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        } else {
+            return;
         }
     }
 
     public void handleLoadFromFile(ActionEvent actionEvent) {
-        if(simulationRunning.get() == true) {
+        if (simulationRunning.get() == true) {
             simulationRunning.set(false);
         }
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Загрузить файл");
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("JSON файлы", "*.json")
-        );
+//        fileChooser.getExtensionFilters().addAll(
+//                new FileChooser.ExtensionFilter("JSON файлы", "*.json"),
+//                new FileChooser.ExtensionFilter("SER файлы", "*.ser")
+//        );
         File file = fileChooser.showOpenDialog(stage);
-        if(file != null) {
-            try {
-                String content = Files.readString(file.toPath());
-                JsonObject jsonObject = JsonParser.parseString(content).getAsJsonObject();
-                habitat.setFromJson(jsonObject);
-                currentFile = file;
-                habitat.startWithFile();
-            } catch (Exception e) {
-                System.err.println("Ошибка сохранения: " + e.getMessage());
+        if (file != null) {
+            if (file.getName().endsWith(".ser")) {
+                try {
+                    habitat.loadObjects(file.getAbsolutePath());
+                    currentFile = file;
+                    habitat.startWithFile();
+                } catch (Exception e) {
+                    System.err.println("Ошибка сохранения: " + e.getMessage());
+                }
+            } else if (file.getName().endsWith(".json")) {
+                try {
+                    String content = Files.readString(file.toPath());
+                    JsonObject jsonObject = JsonParser.parseString(content).getAsJsonObject();
+                    habitat.setFromJson(jsonObject);
+                    currentFile = file;
+                    habitat.startWithFile();
+                } catch (Exception e) {
+                    System.err.println("Ошибка сохранения: " + e.getMessage());
+                }
             }
+
         }
     }
+
 
     @Override
     public boolean isFileExist() {
         return currentFile != null;
+    }
+
+    public void updateClientList(String[] names) {
+        String selected = (String) clientsListView.getSelectionModel().getSelectedItem();
+
+        clientsListView.getItems().clear();
+
+        if (names.length > 0 && !(names.length == 1 && names[0].isEmpty())) {
+            clientsListView.getItems().addAll(java.util.Arrays.asList(names));
+
+
+            if (selected != null && clientsListView.getItems().contains(selected)) {
+                clientsListView.getSelectionModel().select(selected);
+            }
+        }
+    }
+
+    public void setClientNameUI() {
+        clientName.setText("Клиент: " + ServerCommandHandler.getName());
+    }
+
+    public void handleSaveToDB(ActionEvent actionEvent) throws SQLException {
+        float time = habitat.getSimulationTime();
+
+        db.clearAll();
+        db.saveAllObject(time);
+    }
+
+    public void handleLoadFromDB(ActionEvent actionEvent) throws SQLException {
+        if (simulationRunning.get() == true) {
+            simulationRunning.set(false);
+        }
+        db.loadAllObject();
+        habitat.startWithDB();
+    }
+
+    public void handleSaveBoysToDB(ActionEvent actionEvent) throws SQLException {
+        float time = habitat.getSimulationTime();
+        db.clearAll();
+        db.saveObjectByType("boy",time);
+    }
+
+    public void handleSaveGirlsToDB(ActionEvent actionEvent) throws SQLException {
+        float time = habitat.getSimulationTime();
+        db.clearAll();
+        db.saveObjectByType("girl",time);
+    }
+
+    public void handleLoadBoysFromDB(ActionEvent actionEvent) throws SQLException {
+        if (simulationRunning.get() == true) {
+            simulationRunning.set(false);
+        }
+        db.loadObjectByType("boy");
+        habitat.startWithDB();
+    }
+
+    public void handleLoadGirlsFromDB(ActionEvent actionEvent) throws SQLException {
+        if (simulationRunning.get() == true) {
+            simulationRunning.set(false);
+        }
+        db.loadObjectByType("girl");
+        habitat.startWithDB();
     }
 }

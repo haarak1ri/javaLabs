@@ -7,15 +7,13 @@ import com.google.gson.reflect.TypeToken;
 import javafx.scene.canvas.GraphicsContext;
 import com.example.labs.model.Student;
 
-import java.io.IOException;
-import java.io.PipedReader;
-import java.io.PipedWriter;
+import java.io.*;
 import java.lang.reflect.Type;
 import java.util.Random;
 import java.util.*;
 
 
-public class Habitat {
+public class Habitat implements Serializable {
     private static Habitat habitat;
     private float N1 = 1.0f;
     private float N2 = 1.5f;
@@ -72,7 +70,7 @@ public class Habitat {
             .create();
     private FileProvider fileProvider;
     private boolean startWithFile;
-
+    private boolean startWithDB;
 
 
     public void setFileProvider(FileProvider fileProvider) {
@@ -217,7 +215,7 @@ public class Habitat {
                         activeIds.remove(obj.getId());
                     }
                     synchronized (birthToIdLock) {
-                        birthToId.remove(obj.getCreationTimeNanos());
+                        birthToId.remove(obj.getId());
                     }
                 }
             }
@@ -239,6 +237,13 @@ public class Habitat {
                 synchronized (birthToIdLock) {
                     if(fileProvider.isFileExist() && startWithFile == true ) {
 
+                        boyTimer = 0;
+                        girlTimer = 0;
+                        simulationTime = 0;
+                        treeMapTimeNanos = 0;
+                        boyCount = (int) objects.stream().filter(o -> o instanceof BoyStudent).count();
+                        girlCount = (int) objects.stream().filter(o -> o instanceof GirlStudent).count();
+                    } else if (startWithDB) {
                         boyTimer = 0;
                         girlTimer = 0;
                         simulationTime = 0;
@@ -458,6 +463,84 @@ public class Habitat {
         }
     }
 
+    @Override
+    public void saveObjects(String path) throws IOException {
+        try(ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(path)))) {
+            ArrayList<IBehaviour> objectsCopy = new ArrayList<>();
+            for(IBehaviour o : objects) {
+                objectsCopy.add(o.copyForSir());
+            }
+            for(IBehaviour o : objectsCopy) {
+                System.out.println(o.getType());
+            }
+
+            oos.writeFloat(getSimulationTime());
+            oos.writeObject(objectsCopy);
+        }
+    }
+    public void setObjects(ArrayList<IBehaviour> o) {
+        this.objects = o;
+    }
+    public void setActiveIds(Set<Integer> s ) {this.activeIds = s;}
+    public void setBirthToId(TreeMap<Integer,Long> b) {this.birthToId = b;}
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void loadObjects(String path) throws IOException, ClassNotFoundException {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(path))) {
+            float savedSimTime = ois.readFloat();
+            Object readedObj = ois.readObject();
+            if(readedObj instanceof ArrayList<?>) {
+                    ArrayList<IBehaviour> obj = (ArrayList<IBehaviour>)readedObj;
+                    fixTimes(obj,savedSimTime);
+
+                    for(IBehaviour o : obj) {
+                    if(o instanceof IBehaviour s) {
+                        s.initImage();
+                        }
+                    }
+
+
+                    Set<Integer> ids = new HashSet<>();
+                    TreeMap<Integer,Long> btoid = new TreeMap<>();
+
+                    for(IBehaviour o : obj) {
+                        ids.add(o.getId());
+                        btoid.put(o.getId(), o.getCreationTimeNanos());
+                    }
+
+
+                    this.objects = obj;
+                    this.activeIds = ids;
+                    this.birthToId = btoid;
+
+
+            } else {
+                throw new IOException("File contains smth bad");
+            }
+        }
+    }
+
+    @Override
+    public void fixTimes(ArrayList<IBehaviour> obj, float time) {
+        for(IBehaviour o : obj) {
+            o.setTimeOfLife(time - o.getCreationTime());
+            o.setCreationTime(0);
+            o.setCreationTimeNanos(0);
+        }
+    }
+
+    public List<IBehaviour> getStudentsByType(String type) {
+        List<IBehaviour> st;
+        if(type.equals("boy")) {
+            st =  getBoysStudents();
+        }
+        else {
+            st = getGirlStudents();
+        }
+        return st;
+    }
+
     private static class IBehaviourDeserializer implements JsonDeserializer<IBehaviour> {
         @Override
         public IBehaviour deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext ctx)
@@ -472,20 +555,29 @@ public class Habitat {
         }
     }
 
+
     public String getSavedToJson(float timeOfCall) {
         String json = null;
         try {
-            List<IBehaviour> objCopy = objects;
-            for(IBehaviour obj : objCopy) {
-                obj.setTimeOfLife(obj.getLifeTime() - (timeOfCall-obj.getCreationTime()));
-                obj.setCreationTime(0);
-                obj.setCreationTimeNanos(0);
 
+            List<IBehaviour> objCopy = new ArrayList<>();
+            for(IBehaviour obj : objects) {
+                IBehaviour copy = obj.copy();
+                float livedTime = timeOfCall - obj.getCreationTime();
+                float remainingLife = obj.getLifeTime() - livedTime;
+                copy.setTimeOfLife(remainingLife);
+                copy.setCreationTime(0);
+                copy.setCreationTimeNanos(0);
+                objCopy.add(copy);
             }
-            Set<Integer> activeIdsCopy = activeIds;
-            TreeMap<Integer,Long> birthToIdCopy = birthToId;
-            for(Map.Entry<Integer,Long> entry : birthToIdCopy.entrySet()) {
-                entry.setValue(0L);
+
+
+            Set<Integer> activeIdsCopy = new HashSet<>(activeIds);
+
+
+            TreeMap<Integer,Long> birthToIdCopy = new TreeMap<>();
+            for(Map.Entry<Integer,Long> entry : birthToId.entrySet()) {
+                birthToIdCopy.put(entry.getKey(), 0L);
             }
 
             Map<String, Object> allCollections = new HashMap<>();
@@ -509,15 +601,9 @@ public class Habitat {
         Set<Integer> ids = gson.fromJson(json.get("activeIds"), new TypeToken<Set<Integer>>(){}.getType());
         TreeMap<Integer,Long> btoid = gson.fromJson(json.get("birthToId"), new TypeToken<TreeMap<Integer,Long> >(){}.getType());
 
-        synchronized (objectsLock) {
-            synchronized (activeIdsLock) {
-                synchronized (birthToIdLock) {
-                    this.objects = obj;
-                    this.activeIds = ids;
-                    this.birthToId = btoid;
-                }
-            }
-        }
+        this.objects = obj;
+        this.activeIds = ids;
+        this.birthToId = btoid;
     }
 
     public void startWithFile() {
@@ -525,6 +611,46 @@ public class Habitat {
     }
     public void startWithoutFile() {
         this.startWithFile = false;
+    }
+
+    public void startWithDB() {
+        this.startWithDB = true;
+    }
+    public void startWithoutDB() {
+        this.startWithDB = false;
+    }
+
+
+    public void updateN1Params(float n) {
+        synchronized (this) {
+            this.N1 = n;
+        }
+    }
+    public void updateN2Params(float n) {
+        synchronized (this) {
+            this.N2 = n;
+        }
+    }
+
+    public void updateP1Params(double p) {
+        synchronized (this) {
+            this.P1 = p;
+        }
+    }
+    public void updateP2Params(double p) {
+        synchronized (this) {
+            this.P2 = p;
+        }
+    }
+    public void updateTimesOfLifeN1Params(float s) {
+        synchronized (this) {
+            this.n1TimeOfLife = s;
+        }
+    }
+    public void updateTimesOfLifeN2Params(float s) {
+        synchronized (this) {
+            this.n2TimeOfLife = s;
+        }
     }
 }
 

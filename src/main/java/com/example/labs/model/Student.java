@@ -5,17 +5,19 @@ import com.google.gson.annotations.Expose;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 
+import java.io.Serializable;
 import java.util.Random;
 
 
 
-public abstract class Student implements IBehaviour {
+public abstract class Student implements IBehaviour, Serializable {
+    private static final long serialVersionUID = 1L;
     @Expose
     protected float x;
     @Expose
     protected float y;
     @Expose
-    protected Image image;
+    protected transient Image image;
     public static final int SIZE = 50;
 
     @Expose
@@ -113,7 +115,7 @@ public abstract class Student implements IBehaviour {
 //            this.y = newY;
 //        }
 //    }
-public float getX() {
+    public float getX() {
     synchronized (getLock()) { return x; }
 }
     public float getY() {
@@ -130,4 +132,16 @@ public float getX() {
             this.y = newY;
         }
     }
+
+    public IBehaviour copy() {
+        return null;
+    }
+    public IBehaviour copyForSir() {
+        return null;
+    }
+    public String getType() {
+        return null;
+    }
+
+
 }

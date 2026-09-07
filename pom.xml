@@ -7,7 +7,9 @@
     <groupId>com.example</groupId>
     <artifactId>labs</artifactId>
     <version>1.0-SNAPSHOT</version>
+
     <name>labs</name>
+
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -38,6 +40,21 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/gson-2.10.1.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.10</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/postgresql-42.7.10.jar</systemPath>
+        </dependency>
+
 
     </dependencies>
 

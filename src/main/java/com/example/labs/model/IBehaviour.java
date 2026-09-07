@@ -12,4 +12,11 @@ public interface IBehaviour {
     void setCreationTime(float time);
     void setTimeOfLife(float time);
     void setCreationTimeNanos(long time);
+    public IBehaviour copy();
+    public IBehaviour copyForSir();
+    String getType();
+    float getX();
+    float getY();
+
+    void initImage();
 }

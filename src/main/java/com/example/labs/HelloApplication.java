@@ -3,10 +3,12 @@ package com.example.labs;
 import com.example.labs.core.AppConfig;
 import com.example.labs.core.Habitat;
 import com.example.labs.core.TimerService;
+import com.example.labs.db.Database;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import com.example.labs.tcp.ServerCommandHandler;
 
 import javax.imageio.IIOException;
 import java.io.IOException;
@@ -14,6 +16,7 @@ import java.io.IOException;
 public class HelloApplication extends Application {
     private AppConfig config;
     private HelloController controller;
+    private ServerCommandHandler serverCommandHandler;
     @Override
     public void start(Stage stage) throws IOException {
 
@@ -24,17 +27,21 @@ public class HelloApplication extends Application {
 
         Habitat habitat = Habitat.getHabitat(1280,920);
         TimerService timer = new TimerService(habitat);
-
+        Database db = new Database();
+        this.serverCommandHandler = new ServerCommandHandler(controller, habitat);
         controller.setHabitat(habitat);
         controller.setTimer(timer);
         controller.setConsoleWriter(habitat.getConsoleWriter());
+        controller.setDatabase(db);
         controller.setStage(stage);
+        controller.setSeverCommandHandler(serverCommandHandler);
         this.config = new AppConfig();
         config.loadConfig();
         controller.setConfig(this.config);
 
         stage.setScene(scene);
         stage.show();
+        serverCommandHandler.start();
     }
 
     private void saveConfigBeforeExit() {
@@ -44,6 +51,9 @@ public class HelloApplication extends Application {
     }
     @Override
     public void stop() {
+        if (serverCommandHandler != null) {
+            serverCommandHandler.stop();
+        }
         if (config != null) {
             controller.updateConfigFromUI();
             config.saveConfig();

@@ -24,6 +24,7 @@
 <?import java.lang.String?>
 
 <?import java.lang.Integer?>
+<?import javafx.scene.control.ListView?>
 <BorderPane fx:id="root"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.example.labs.HelloController"
@@ -35,6 +36,14 @@
                 <Menu text="Файл">
                     <MenuItem text="Сохранить" onAction="#handleSaveToFile"/>
                     <MenuItem text="Загрузить" onAction="#handleLoadFromFile"/>
+                </Menu>
+                <Menu text="Бд">
+                    <MenuItem text="Сохранить в БД всех" onAction="#handleSaveToDB"/>
+                    <MenuItem text="Сохранить в БД парней" onAction="#handleSaveBoysToDB"/>
+                    <MenuItem text="Сохранить в БД девушек" onAction="#handleSaveGirlsToDB"/>
+                    <MenuItem text="Загрузить из БД" onAction="#handleLoadFromDB"/>
+                    <MenuItem text="Загрузить из БД парней" onAction="#handleLoadBoysFromDB"/>
+                    <MenuItem text="Загрузить из БД девушек" onAction="#handleLoadGirlsFromDB"/>
                 </Menu>
                 <Menu text="Вид">
                     <MenuItem text="Показать/скрыть время" onAction="#handleShowTimerButton"/>
@@ -64,6 +73,7 @@
                         style="-fx-background-color: #000000; -fx-text-fill: #FFFFFF;"/>
             </ToolBar>
         </VBox>
+
     </top>
 
     <center>
@@ -81,210 +91,301 @@
                        text="Время: 0.0 сек"
                        style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-background-color: rgba(240,240,240,0.8); -fx-padding: 5; -fx-border-color: #cccccc; -fx-border-radius: 3;"
                        AnchorPane.topAnchor="30"
-                       AnchorPane.rightAnchor="40"/>
+                       AnchorPane.leftAnchor="40"/>
             </AnchorPane>
 
 
-            <VBox spacing="15" style="-fx-padding: 20; -fx-background-color: #f0f0f0;"
-                  prefWidth="500">
+<!--            <VBox spacing="15" style="-fx-padding: 20; -fx-background-color: #f0f0f0;"-->
+<!--                  prefWidth="500">-->
 
 
-                <Label text="ПАНЕЛЬ УПРАВЛЕНИЯ"
-                       style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #333;"/>
+<!--                <Label text="ПАНЕЛЬ УПРАВЛЕНИЯ"-->
+<!--                       style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #333;"/>-->
 
+<!--                <Separator/>-->
+
+
+<!--                <Label text="Управление:" style="-fx-font-weight: bold;"/>-->
+<!--                <HBox spacing="10">-->
+<!--                    <Button fx:id="startButtonPanel"-->
+<!--                            text="СТАРТ (B)"-->
+<!--                            onAction="#handleStartButton"-->
+<!--                            prefWidth="200"-->
+<!--                            style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>-->
+<!--                    <Button fx:id="stopButtonPanel"-->
+<!--                            text="СТОП (E)"-->
+<!--                            onAction="#handleStopButton"-->
+<!--                            prefWidth="200"-->
+<!--                            style="-fx-background-color: #f44336; -fx-text-fill: white;"/>-->
+<!--                </HBox>-->
+
+
+
+<!--                <RadioButton text="Показывать время (T)"-->
+<!--                             fx:id="showTimeRadio"-->
+<!--                             selected="true">-->
+
+<!--                    <toggleGroup>-->
+<!--                        <ToggleGroup fx:id="timeToggleGroup"/>-->
+<!--                    </toggleGroup>-->
+
+<!--                </RadioButton>-->
+
+<!--                <RadioButton text="Скрывать время (T)"-->
+<!--                             fx:id="hideTimeRadio"-->
+<!--                             toggleGroup="$timeToggleGroup"/>-->
+
+
+<!--                <Separator/>-->
+
+<!--                <Label text="Текущие клиенты:" style="-fx-font-weight: bold;"/>-->
+<!--                <ListView fx:id="clientsListView"-->
+
+<!--                          prefHeight="120"-->
+<!--                          style="-fx-background-color: white; -fx-border-color: #cccccc;">-->
+
+<!--                </ListView>-->
+
+<!--                <HBox spacing="10" alignment="CENTER_LEFT">-->
+<!--                    <CheckBox fx:id="syncWithSelectedCheckBox"-->
+<!--                              text="Синхронизировать с выбранным"-->
+<!--                              style="-fx-font-weight: bold;"/>-->
+<!--                </HBox>-->
+
+<!--                <Label fx:id="syncStatusLabel"-->
+<!--                       text="Статус: не выбран клиент для синхронизации"-->
+<!--                       style="-fx-font-size: 12px; -fx-font-style: italic; -fx-text-fill: #666;"/>-->
+
+<!--                <Separator/>-->
+
+<!--                <CheckBox fx:id="ShowInfoCheckBox" text="Показать информацию" style="-fx-font-weight: bold;"/>-->
+
+<!--                <Label text="ПАРАМЕТРЫ СИМУЛЯЦИИ"-->
+<!--                       style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #333;"/>-->
+<!--                <GridPane hgap="10" vgap="10" style="-fx-padding: 5 0 10 0;">-->
+
+
+<!--                    <Label text="N1 (период мальчиков):"-->
+<!--                           GridPane.rowIndex="0" GridPane.columnIndex="0"/>-->
+<!--                    <TextField fx:id="n1Field"-->
+<!--                               text="1.0"-->
+<!--                               promptText="секунды"-->
+<!--                               prefWidth="100"-->
+<!--                               GridPane.rowIndex="0" GridPane.columnIndex="1"/>-->
+
+
+<!--                    <Label text="P1 (вероятность):"-->
+<!--                           GridPane.rowIndex="1" GridPane.columnIndex="0"/>-->
+<!--                    <ComboBox fx:id="p1Combo"-->
+<!--                              value="70%"-->
+<!--                              prefWidth="100"-->
+<!--                              GridPane.rowIndex="1" GridPane.columnIndex="1">-->
+<!--                        <items>-->
+<!--                            <FXCollections fx:factory="observableArrayList">-->
+<!--                                <String fx:value="10%"/>-->
+<!--                                <String fx:value="20%"/>-->
+<!--                                <String fx:value="30%"/>-->
+<!--                                <String fx:value="40%"/>-->
+<!--                                <String fx:value="50%"/>-->
+<!--                                <String fx:value="60%"/>-->
+<!--                                <String fx:value="70%"/>-->
+<!--                                <String fx:value="80%"/>-->
+<!--                                <String fx:value="90%"/>-->
+<!--                                <String fx:value="100%"/>-->
+<!--                            </FXCollections>-->
+<!--                        </items>-->
+<!--                    </ComboBox>-->
+
+
+<!--                    <Label text="N2 (период девочек):"-->
+<!--                           GridPane.rowIndex="2" GridPane.columnIndex="0"/>-->
+<!--                    <TextField fx:id="n2Field"-->
+<!--                               text="1.5"-->
+<!--                               promptText="секунды"-->
+<!--                               prefWidth="100"-->
+<!--                               GridPane.rowIndex="2" GridPane.columnIndex="1"/>-->
+
+
+<!--                    <Label text="P2 (вероятность):"-->
+<!--                           GridPane.rowIndex="3" GridPane.columnIndex="0"/>-->
+<!--                    <ComboBox fx:id="p2Combo"-->
+<!--                              value="50%"-->
+<!--                              prefWidth="100"-->
+<!--                              GridPane.rowIndex="3" GridPane.columnIndex="1">-->
+<!--                        <items>-->
+<!--                            <FXCollections fx:factory="observableArrayList">-->
+<!--                                <String fx:value="10%"/>-->
+<!--                                <String fx:value="20%"/>-->
+<!--                                <String fx:value="30%"/>-->
+<!--                                <String fx:value="40%"/>-->
+<!--                                <String fx:value="50%"/>-->
+<!--                                <String fx:value="60%"/>-->
+<!--                                <String fx:value="70%"/>-->
+<!--                                <String fx:value="80%"/>-->
+<!--                                <String fx:value="90%"/>-->
+<!--                                <String fx:value="100%"/>-->
+<!--                            </FXCollections>-->
+<!--                        </items>-->
+<!--                    </ComboBox>-->
+
+<!--                    <Label text="Время жизни студентов-парней"-->
+<!--                           GridPane.rowIndex="4" GridPane.columnIndex="0"/>-->
+<!--                    <TextField fx:id="n1TimeOfLifeField"-->
+<!--                               text="1.0"-->
+<!--                               promptText="секунды"-->
+<!--                               prefWidth="100"-->
+<!--                               GridPane.rowIndex="4" GridPane.columnIndex="1"/>-->
+
+<!--                    <Label text="Время жизни студентов-девушек"-->
+<!--                           GridPane.rowIndex="5" GridPane.columnIndex="0"/>-->
+<!--                    <TextField fx:id="n2TimeOfLifeField"-->
+<!--                               text="1.0"-->
+<!--                               promptText="секунды"-->
+<!--                               prefWidth="100"-->
+<!--                               GridPane.rowIndex="5" GridPane.columnIndex="1"/>-->
+
+
+
+<!--                </GridPane>-->
+<!--                <Button fx:id="currentObjects"-->
+<!--                        text="Текущие объекты"-->
+<!--                        onAction="#handleGetCurrentObjectsButton"-->
+<!--                        prefWidth="200"-->
+<!--                        style="-fx-background-color: #ADD8E6; -fx-text-fill: white;"/>-->
+
+<!--                <Label fx:id = "boysMoveLabel" text="Движение парней (ВКЛ/ВЫКЛ)" style="-fx-font-weight: bold;"/>-->
+
+<!--                <HBox spacing="10">-->
+
+<!--                    <Button fx:id="boysAIstart"-->
+<!--                            text="ВКЛ"-->
+<!--                            onAction="#handleBoysAIStartButton"-->
+<!--                            prefWidth="70"-->
+<!--                            style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>-->
+<!--                    <Button fx:id="boysAIstop"-->
+<!--                            text="ВЫКЛ"-->
+<!--                            onAction="#handleBoysAIStopButton"-->
+<!--                            prefWidth="70"-->
+<!--                            style="-fx-background-color: #f44336; -fx-text-fill: white;"/>-->
+<!--                </HBox>-->
+<!--                <Label fx:id = "girlsMoveLabel" text="Движение девушек (ВКЛ/ВЫКЛ)" style="-fx-font-weight: bold;"/>-->
+<!--                <HBox spacing="10">-->
+<!--                    <Button fx:id="girlsAIstart"-->
+<!--                            text="ВКЛ"-->
+<!--                            onAction="#handleGirlsAIStartButton"-->
+<!--                            prefWidth="70"-->
+<!--                            style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>-->
+<!--                    <Button fx:id="girlsAIstop"-->
+<!--                            text="ВЫКЛ"-->
+<!--                            onAction="#handleGirlsAIStopButton"-->
+<!--                            prefWidth="70"-->
+<!--                            style="-fx-background-color: #f44336; -fx-text-fill: white;"/>-->
+
+<!--                </HBox>-->
+
+
+<!--                <Label fx:id = "priority" text="Установить приоритет: " style="-fx-font-weight: bold;"/>-->
+
+<!--                <GridPane hgap="10" vgap="10" style="-fx-padding: 5 0 10 0;">-->
+<!--                    <Label text="Приоритет парней:"-->
+<!--                           GridPane.rowIndex="0" GridPane.columnIndex="0"/>-->
+<!--                    <ComboBox fx:id="bpr"-->
+
+<!--                              prefWidth="100" GridPane.rowIndex="0" GridPane.columnIndex="1" >-->
+<!--                        <items>-->
+<!--                            <FXCollections fx:factory="observableArrayList">-->
+<!--                                <Integer fx:value="1"/>-->
+<!--                                <Integer fx:value="5"/>-->
+<!--                                <Integer fx:value="10"/>-->
+<!--                            </FXCollections>-->
+<!--                        </items>-->
+<!--                    </ComboBox>-->
+<!--                    <Label text="Приоритет девушек:"-->
+<!--                           GridPane.rowIndex="1" GridPane.columnIndex="0"/>-->
+<!--                    <ComboBox fx:id="gpr"-->
+
+<!--                              prefWidth="100" GridPane.rowIndex="1" GridPane.columnIndex="1" >-->
+<!--                        <items>-->
+<!--                            <FXCollections fx:factory="observableArrayList">-->
+<!--                                <Integer fx:value="1"/>-->
+<!--                                <Integer fx:value="5"/>-->
+<!--                                <Integer fx:value="10"/>-->
+<!--                            </FXCollections>-->
+<!--                        </items>-->
+<!--                    </ComboBox>-->
+
+<!--                </GridPane>-->
+
+<!--            </VBox>-->
+            <VBox spacing="10" style="-fx-padding: 10; -fx-background-color: #f0f0f0;" prefWidth="400">
+                <Label text="ПАНЕЛЬ УПРАВЛЕНИЯ" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #333;"/>
                 <Separator/>
-
 
                 <Label text="Управление:" style="-fx-font-weight: bold;"/>
-                <HBox spacing="10">
-                    <Button fx:id="startButtonPanel"
-                            text="СТАРТ (B)"
-                            onAction="#handleStartButton"
-                            prefWidth="200"
-                            style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
-                    <Button fx:id="stopButtonPanel"
-                            text="СТОП (E)"
-                            onAction="#handleStopButton"
-                            prefWidth="200"
-                            style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
+                <HBox spacing="5">
+                    <Button fx:id="startButtonPanel" text="СТАРТ (B)" onAction="#handleStartButton" prefWidth="120" style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+                    <Button fx:id="stopButtonPanel" text="СТОП (E)" onAction="#handleStopButton" prefWidth="120" style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
                 </HBox>
 
+                <HBox spacing="10">
+                    <RadioButton fx:id="showTimeRadio" text="Показать (T)" selected="true"><toggleGroup><ToggleGroup fx:id="timeToggleGroup"/></toggleGroup></RadioButton>
+                    <RadioButton fx:id="hideTimeRadio" text="Скрыть (T)" toggleGroup="$timeToggleGroup"/>
+                    <CheckBox fx:id="ShowInfoCheckBox" text="Инфо"/>
+                </HBox>
 
+                <Separator/>
+                <Label fx:id="clientName" text="Клиент:" style="-fx-font-weight: bold;"/>
+                <Label text="Клиенты:" style="-fx-font-weight: bold;"/>
+                <ListView fx:id="clientsListView" prefHeight="100" style="-fx-background-color: white; -fx-border-color: #cccccc;"/>
 
-                <RadioButton text="Показывать время (T)"
-                             fx:id="showTimeRadio"
-                             selected="true">
-
-                    <toggleGroup>
-                        <ToggleGroup fx:id="timeToggleGroup"/>
-                    </toggleGroup>
-
-                </RadioButton>
-
-                <RadioButton text="Скрывать время (T)"
-                             fx:id="hideTimeRadio"
-                             toggleGroup="$timeToggleGroup"/>
+                <CheckBox fx:id="syncWithSelectedCheckBox" text="Синхронизация"/>
+                <Label fx:id="syncStatusLabel"  style="-fx-font-size: 11px; -fx-font-style: italic; -fx-text-fill: #666;"/>
 
                 <Separator/>
 
-                <CheckBox fx:id="ShowInfoCheckBox" text="Показать информацию" style="-fx-font-weight: bold;"/>
-
-                <Label text="ПАРАМЕТРЫ СИМУЛЯЦИИ"
-                       style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #333;"/>
-                <GridPane hgap="10" vgap="10" style="-fx-padding: 5 0 10 0;">
-
-
-                    <Label text="N1 (период мальчиков):"
-                           GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-                    <TextField fx:id="n1Field"
-                               text="1.0"
-                               promptText="секунды"
-                               prefWidth="100"
-                               GridPane.rowIndex="0" GridPane.columnIndex="1"/>
-
-
-                    <Label text="P1 (вероятность):"
-                           GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-                    <ComboBox fx:id="p1Combo"
-                              value="70%"
-                              prefWidth="100"
-                              GridPane.rowIndex="1" GridPane.columnIndex="1">
-                        <items>
-                            <FXCollections fx:factory="observableArrayList">
-                                <String fx:value="10%"/>
-                                <String fx:value="20%"/>
-                                <String fx:value="30%"/>
-                                <String fx:value="40%"/>
-                                <String fx:value="50%"/>
-                                <String fx:value="60%"/>
-                                <String fx:value="70%"/>
-                                <String fx:value="80%"/>
-                                <String fx:value="90%"/>
-                                <String fx:value="100%"/>
-                            </FXCollections>
-                        </items>
+                <Label text="ПАРАМЕТРЫ" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #333;"/>
+                <GridPane hgap="5" vgap="5">
+                    <Label text="N1 (период):" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                    <TextField fx:id="n1Field" text="1.0" prefWidth="70" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                    <Label text="P1:" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                    <ComboBox fx:id="p1Combo" value="70%" prefWidth="70" GridPane.rowIndex="0" GridPane.columnIndex="3">
+                        <items><FXCollections fx:factory="observableArrayList"><String fx:value="10%"/><String fx:value="20%"/><String fx:value="30%"/><String fx:value="40%"/><String fx:value="50%"/><String fx:value="60%"/><String fx:value="70%"/><String fx:value="80%"/><String fx:value="90%"/><String fx:value="100%"/></FXCollections></items>
                     </ComboBox>
 
-
-                    <Label text="N2 (период девочек):"
-                           GridPane.rowIndex="2" GridPane.columnIndex="0"/>
-                    <TextField fx:id="n2Field"
-                               text="1.5"
-                               promptText="секунды"
-                               prefWidth="100"
-                               GridPane.rowIndex="2" GridPane.columnIndex="1"/>
-
-
-                    <Label text="P2 (вероятность):"
-                           GridPane.rowIndex="3" GridPane.columnIndex="0"/>
-                    <ComboBox fx:id="p2Combo"
-                              value="50%"
-                              prefWidth="100"
-                              GridPane.rowIndex="3" GridPane.columnIndex="1">
-                        <items>
-                            <FXCollections fx:factory="observableArrayList">
-                                <String fx:value="10%"/>
-                                <String fx:value="20%"/>
-                                <String fx:value="30%"/>
-                                <String fx:value="40%"/>
-                                <String fx:value="50%"/>
-                                <String fx:value="60%"/>
-                                <String fx:value="70%"/>
-                                <String fx:value="80%"/>
-                                <String fx:value="90%"/>
-                                <String fx:value="100%"/>
-                            </FXCollections>
-                        </items>
+                    <Label text="N2 (период):" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                    <TextField fx:id="n2Field" text="1.5" prefWidth="70" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                    <Label text="P2:" GridPane.rowIndex="1" GridPane.columnIndex="2"/>
+                    <ComboBox fx:id="p2Combo" value="50%" prefWidth="70" GridPane.rowIndex="1" GridPane.columnIndex="3">
+                        <items><FXCollections fx:factory="observableArrayList"><String fx:value="10%"/><String fx:value="20%"/><String fx:value="30%"/><String fx:value="40%"/><String fx:value="50%"/><String fx:value="60%"/><String fx:value="70%"/><String fx:value="80%"/><String fx:value="90%"/><String fx:value="100%"/></FXCollections></items>
                     </ComboBox>
 
-                    <Label text="Время жизни студентов-парней"
-                           GridPane.rowIndex="4" GridPane.columnIndex="0"/>
-                    <TextField fx:id="n1TimeOfLifeField"
-                               text="1.0"
-                               promptText="секунды"
-                               prefWidth="100"
-                               GridPane.rowIndex="4" GridPane.columnIndex="1"/>
-
-                    <Label text="Время жизни студентов-девушек"
-                           GridPane.rowIndex="5" GridPane.columnIndex="0"/>
-                    <TextField fx:id="n2TimeOfLifeField"
-                               text="1.0"
-                               promptText="секунды"
-                               prefWidth="100"
-                               GridPane.rowIndex="5" GridPane.columnIndex="1"/>
-
-
-
-                </GridPane>
-                <Button fx:id="currentObjects"
-                        text="Текущие объекты"
-                        onAction="#handleGetCurrentObjectsButton"
-                        prefWidth="200"
-                        style="-fx-background-color: #ADD8E6; -fx-text-fill: white;"/>
-
-                <Label fx:id = "boysMoveLabel" text="Движение парней (ВКЛ/ВЫКЛ)" style="-fx-font-weight: bold;"/>
-
-                <HBox spacing="10">
-
-                    <Button fx:id="boysAIstart"
-                            text="ВКЛ"
-                            onAction="#handleBoysAIStartButton"
-                            prefWidth="70"
-                            style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
-                    <Button fx:id="boysAIstop"
-                            text="ВЫКЛ"
-                            onAction="#handleBoysAIStopButton"
-                            prefWidth="70"
-                            style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
-                </HBox>
-                <Label fx:id = "girlsMoveLabel" text="Движение девушек (ВКЛ/ВЫКЛ)" style="-fx-font-weight: bold;"/>
-                <HBox spacing="10">
-                    <Button fx:id="girlsAIstart"
-                            text="ВКЛ"
-                            onAction="#handleGirlsAIStartButton"
-                            prefWidth="70"
-                            style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
-                    <Button fx:id="girlsAIstop"
-                            text="ВЫКЛ"
-                            onAction="#handleGirlsAIStopButton"
-                            prefWidth="70"
-                            style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
-
-                </HBox>
-
-
-                <Label fx:id = "priority" text="Установить приоритет: " style="-fx-font-weight: bold;"/>
-
-                <GridPane hgap="10" vgap="10" style="-fx-padding: 5 0 10 0;">
-                    <Label text="Приоритет парней:"
-                           GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-                    <ComboBox fx:id="bpr"
-
-                              prefWidth="100" GridPane.rowIndex="0" GridPane.columnIndex="1" >
-                        <items>
-                            <FXCollections fx:factory="observableArrayList">
-                                <Integer fx:value="1"/>
-                                <Integer fx:value="5"/>
-                                <Integer fx:value="10"/>
-                            </FXCollections>
-                        </items>
-                    </ComboBox>
-                    <Label text="Приоритет девушек:"
-                           GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-                    <ComboBox fx:id="gpr"
-
-                              prefWidth="100" GridPane.rowIndex="1" GridPane.columnIndex="1" >
-                        <items>
-                            <FXCollections fx:factory="observableArrayList">
-                                <Integer fx:value="1"/>
-                                <Integer fx:value="5"/>
-                                <Integer fx:value="10"/>
-                            </FXCollections>
-                        </items>
-                    </ComboBox>
-
+                    <Label text="Время жизни М:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                    <TextField fx:id="n1TimeOfLifeField" text="1.0" prefWidth="70" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                    <Label text="Время жизни Ж:" GridPane.rowIndex="2" GridPane.columnIndex="2"/>
+                    <TextField fx:id="n2TimeOfLifeField" text="1.0" prefWidth="70" GridPane.rowIndex="2" GridPane.columnIndex="3"/>
                 </GridPane>
 
+                <Button fx:id="currentObjects" text="Текущие объекты" onAction="#handleGetCurrentObjectsButton" prefWidth="150" style="-fx-background-color: #ADD8E6; -fx-text-fill: white;"/>
+
+                <HBox spacing="5" alignment="CENTER_LEFT">
+                    <Label text="Парни:" style="-fx-font-weight: bold;"/>
+                    <Button fx:id="boysAIstart" text="ВКЛ" onAction="#handleBoysAIStartButton" prefWidth="50" style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+                    <Button fx:id="boysAIstop" text="ВЫКЛ" onAction="#handleBoysAIStopButton" prefWidth="50" style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
+                    <Label text="Девушки:" style="-fx-font-weight: bold;" GridPane.columnIndex="3"/>
+                    <Button fx:id="girlsAIstart" text="ВКЛ" onAction="#handleGirlsAIStartButton" prefWidth="50" style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+                    <Button fx:id="girlsAIstop" text="ВЫКЛ" onAction="#handleGirlsAIStopButton" prefWidth="50" style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
+                </HBox>
+
+                <GridPane hgap="5" vgap="5">
+                    <Label text="Приоритет М:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                    <ComboBox fx:id="bpr" prefWidth="70" GridPane.rowIndex="0" GridPane.columnIndex="1">
+                        <items><FXCollections fx:factory="observableArrayList"><Integer fx:value="1"/><Integer fx:value="5"/><Integer fx:value="10"/></FXCollections></items>
+                    </ComboBox>
+                    <Label text="Приоритет Ж:" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                    <ComboBox fx:id="gpr" prefWidth="70" GridPane.rowIndex="0" GridPane.columnIndex="3">
+                        <items><FXCollections fx:factory="observableArrayList"><Integer fx:value="1"/><Integer fx:value="5"/><Integer fx:value="10"/></FXCollections></items>
+                    </ComboBox>
+                </GridPane>
             </VBox>
         </SplitPane>
     </center>

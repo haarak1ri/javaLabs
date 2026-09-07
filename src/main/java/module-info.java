@@ -3,6 +3,7 @@ module com.example.labs {
     requires javafx.fxml;
     requires java.desktop;
     requires com.google.gson;
+    requires java.sql;
 
 
     opens com.example.labs to javafx.fxml;
