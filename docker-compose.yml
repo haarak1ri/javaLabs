@@ -1,0 +1,44 @@
+version: '5.1.0'
+
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: sim_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: simulation_db
+      POSTGRES_USER: sim_user
+      POSTGRES_PASSWORD: sim_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: sim_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@lab.ru
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+volumes:
+  pg_data:
+
+
+#    CREATE TABLE IF NOT EXISTS simulation_objects (
+#    id BIGINT PRIMARY KEY,
+#    type VARCHAR(50) NOT NULL,
+#    birth_time BIGINT NOT NULL,
+#    lifetime BIGINT NOT NULL,
+#    pos_x FLOAT DEFAULT 0,
+#    pos_y FLOAT DEFAULT 0,
+#    created_at TIMESTAMP DEFAULT NOW()
+#    );
+#    CREATE INDEX IF NOT EXISTS idx_type ON simulation_objects(type);
